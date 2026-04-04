@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Bookmarks | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        <div class="page-nav">
+            <a class="back-nav" href="{{ back_url }}">Go Back</a>
+        </div>
+
+        <header class="mode-panel">
+            <form class="mode-form" action="{% url 'bookmarks' %}" method="get">
+                <input type="hidden" name="back" value="{{ back_url }}">
+                <label class="field-label" for="mode">Mode</label>
+                <div class="select-shell">
+                    <select id="mode" name="mode" onchange="this.form.submit()">
+                        {% for mode in modes %}
+                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </header>
+
+        <main class="screen-content">
+            <section class="content-section" aria-labelledby="bookmarks-title">
+                <div class="section-head">
+                    <h1 id="bookmarks-title" class="result-title">Bookmarks</h1>
+                </div>
+
+                {% if bookmarks %}
+                    <div class="saved-grid">
+                        {% for bookmark in bookmarks %}
+                            <article class="saved-card">
+                                <a class="saved-card-link" href="{% url 'search-results' %}?q={{ bookmark.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                    <strong>{{ bookmark.english_word|title }}</strong>
+                                    <span>{% if bookmark.cree_translation %}{{ bookmark.cree_translation }}{% else %}View word{% endif %}</span>
+                                </a>
+
+                                <form class="inline-form inline-form-compact" method="post" action="{% url 'bookmarks' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="remove_bookmark">
+                                    <input type="hidden" name="word" value="{{ bookmark.english_word }}">
+                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                    <button class="action-button action-button-secondary" type="submit">Remove</button>
+                                </form>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">No bookmarks yet. Save words from the search page to see them here.</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ back_url }}">Go Back</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

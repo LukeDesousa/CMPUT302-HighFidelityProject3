@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Search Result | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        <div class="page-nav">
+            <a class="back-nav" href="{{ back_url }}">Go Back</a>
+        </div>
+
+        <header class="mode-panel">
+            <form class="mode-form" action="{% url 'search-results' %}" method="get">
+                <input type="hidden" name="q" value="{{ search_query }}">
+                <input type="hidden" name="back" value="{{ back_url }}">
+                <label class="field-label" for="mode">Mode</label>
+                <div class="select-shell">
+                    <select id="mode" name="mode" onchange="this.form.submit()">
+                        {% for mode in modes %}
+                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </header>
+
+        <main class="screen-content">
+            <section class="search-panel" aria-labelledby="search-heading">
+                <div class="result-topline">
+                    <h1 id="search-heading" class="result-title">Search Result</h1>
+                    <a class="recent-link back-home-link" href="{{ back_url }}">Go back</a>
+                </div>
+
+                <form class="search-form" action="{% url 'search-results' %}" method="get" role="search">
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    <label class="sr-only" for="result-word-search">Search by word</label>
+                    <div class="search-field">
+                        <span class="search-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="6.5"></circle>
+                                <path d="M16 16l5 5"></path>
+                            </svg>
+                        </span>
+                        <input
+                            id="result-word-search"
+                            name="q"
+                            type="search"
+                            value="{{ search_query }}"
+                            autocomplete="off"
+                        >
+                    </div>
+                </form>
+            </section>
+
+            {% if result %}
+                <section class="content-section" aria-labelledby="translation-title">
+                    <div class="section-head">
+                        <h2 id="translation-title">Translation</h2>
+                    </div>
+
+                    <div class="translation-card">
+                        <p class="translation-language">{{ result.topic_name }}</p>
+                        <p class="result-english">{{ result.english_word|title }}</p>
+
+                        {% if result.has_translation %}
+                            <p class="translation-language">{{ result.cree_label }}</p>
+                            <p class="translation-word">{{ result.cree_translation }}</p>
+                        {% else %}
+                            <p class="translation-word translation-pending">No translation available</p>
+                        {% endif %}
+
+                        <div class="related-group" aria-label="Related words">
+                            {% for item in result.related_words %}
+                                <a class="related-chip" href="{% url 'search-results' %}?q={{ item.english|urlencode }}&mode={{ current_mode|urlencode }}&back={{ back_url|urlencode }}">
+                                    {{ item.english|title }}
+                                    <small>{% if item.cree %}{{ item.cree }}{% else %}View word{% endif %}</small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="content-section" aria-labelledby="topic-link-title">
+                    <div class="section-head">
+                        <h2 id="topic-link-title">Browse This Topic</h2>
+                    </div>
+
+                    <a class="topic-card topic-link-card" href="{% url 'topic-detail' result.topic_slug %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                        Open {{ result.topic_name }}
+                    </a>
+                </section>
+
+                <section class="content-section" id="mode-tools" aria-labelledby="mode-tools-title">
+                    <div class="section-head">
+                        <h2 id="mode-tools-title">
+                            {% if current_mode == "Research" %}
+                                Research Graph
+                            {% elif current_mode == "Standard" %}
+                                Bookmark Tools
+                            {% else %}
+                                Lesson Tools
+                            {% endif %}
+                        </h2>
+                    </div>
+
+                    {% if current_mode == "Research" %}
+                        {% if research_graph %}
+                            <div class="word-graph">
+                                <svg class="graph-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                    {% for line in research_graph.lines %}
+                                        <line x1="{{ line.x1 }}" y1="{{ line.y1 }}" x2="{{ line.x2 }}" y2="{{ line.y2 }}"></line>
+                                    {% endfor %}
+                                </svg>
+
+                                {% for node in research_graph.nodes %}
+                                    <div class="graph-node graph-node-{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                        <strong>{{ node.label }}</strong>
+                                        <span>{{ node.meta }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    {% elif current_mode == "Standard" %}
+                        <div class="stack-actions">
+                            <form class="inline-form" method="post" action="{% url 'search-results' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_bookmark">
+                                <input type="hidden" name="mode" value="{{ current_mode }}">
+                                <input type="hidden" name="q" value="{{ search_query }}">
+                                <input type="hidden" name="back" value="{{ back_url }}">
+                                <button class="action-button" type="submit">
+                                    {% if result.is_bookmarked %}
+                                        Remove Bookmark
+                                    {% else %}
+                                        Save Bookmark
+                                    {% endif %}
+                                </button>
+                            </form>
+
+                            <a class="topic-card topic-link-card" href="{{ bookmarks_url }}">Open Bookmarks Page</a>
+                        </div>
+                    {% else %}
+                        <div class="stack-actions">
+                            <p class="mode-intro">Open lessons to create sets and add this word to class material.</p>
+                            <a class="topic-card topic-link-card" href="{{ lessons_url }}">Open Lessons Page</a>
+                        </div>
+                    {% endif %}
+                </section>
+            {% else %}
+                <section class="content-section" aria-labelledby="no-result-title">
+                    <div class="section-head">
+                        <h2 id="no-result-title">No Results Found</h2>
+                    </div>
+
+                    <p class="empty-state">No results were found for "{{ search_query }}". Try one of the suggestions below.</p>
+
+                    <div class="related-group" aria-label="Suggested words">
+                        {% for word in suggested_words %}
+                            <a class="related-chip" href="{% url 'search-results' %}?q={{ word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ back_url|urlencode }}">
+                                {{ word|title }}
+                                <small>View word</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{% if current_mode == 'Standard' %}{{ bookmarks_url }}{% elif current_mode == 'Teacher' %}{{ lessons_url }}{% else %}#mode-tools{% endif %}">
+                {% if current_mode == "Research" %}Graph{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
+            </a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

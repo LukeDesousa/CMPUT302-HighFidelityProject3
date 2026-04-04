@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Lessons | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        <div class="page-nav">
+            <a class="back-nav" href="{{ back_url }}">Go Back</a>
+        </div>
+
+        <header class="mode-panel">
+            <form class="mode-form" action="{% url 'lessons' %}" method="get">
+                <input type="hidden" name="back" value="{{ back_url }}">
+                {% if selected_word %}
+                    <input type="hidden" name="word" value="{{ selected_word }}">
+                {% endif %}
+                <label class="field-label" for="mode">Mode</label>
+                <div class="select-shell">
+                    <select id="mode" name="mode" onchange="this.form.submit()">
+                        {% for mode in modes %}
+                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </header>
+
+        <main class="screen-content">
+            {% if selected_result %}
+                <section class="content-section" aria-labelledby="selected-word-title">
+                    <div class="section-head">
+                        <h1 id="selected-word-title" class="result-title">Selected Word</h1>
+                    </div>
+
+                    <div class="translation-card">
+                        <p class="translation-language">{{ selected_result.topic_name }}</p>
+                        <p class="result-english">{{ selected_result.english_word|title }}</p>
+                        {% if selected_result.has_translation %}
+                            <p class="translation-language">{{ selected_result.cree_label }}</p>
+                            <p class="translation-word">{{ selected_result.cree_translation }}</p>
+                        {% endif %}
+                    </div>
+                </section>
+            {% endif %}
+
+            <section class="content-section" aria-labelledby="lesson-builder-title">
+                <div class="section-head">
+                    <h2 id="lesson-builder-title">Lesson Builder</h2>
+                </div>
+
+                <form class="inline-form" method="post" action="{% url 'lessons' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_lesson">
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    {% if selected_word %}
+                        <input type="hidden" name="word" value="{{ selected_word }}">
+                    {% endif %}
+                    <input class="text-input" type="text" name="lesson_name" placeholder="New lesson name" required>
+                    <button class="action-button" type="submit">Create Lesson</button>
+                </form>
+
+                {% if lessons %}
+                    <div class="lesson-stack">
+                        {% for lesson in lessons %}
+                            <article class="lesson-card">
+                                <div class="lesson-card-top">
+                                    <h3>{{ lesson.name }}</h3>
+                                    <span>{{ lesson.word_count }} words</span>
+                                </div>
+
+                                {% if lesson.words %}
+                                    <div class="related-group">
+                                        {% for lesson_word in lesson.words %}
+                                            <a class="related-chip" href="{% url 'search-results' %}?q={{ lesson_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                                {{ lesson_word.english_word|title }}
+                                                <small>{% if lesson_word.cree_translation %}{{ lesson_word.cree_translation }}{% else %}View word{% endif %}</small>
+                                            </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="mini-empty">No words added yet.</p>
+                                {% endif %}
+
+                                {% if selected_result %}
+                                    {% if lesson.contains_current %}
+                                        <span class="status-pill">Added</span>
+                                    {% else %}
+                                        <form class="inline-form inline-form-compact" method="post" action="{% url 'lessons' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="add_to_lesson">
+                                            <input type="hidden" name="lesson_name" value="{{ lesson.name }}">
+                                            <input type="hidden" name="mode" value="{{ current_mode }}">
+                                            <input type="hidden" name="word" value="{{ selected_word }}">
+                                            <input type="hidden" name="back" value="{{ back_url }}">
+                                            <button class="action-button" type="submit">Add {{ selected_result.english_word|title }}</button>
+                                        </form>
+                                    {% endif %}
+                                {% endif %}
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">No lessons yet. Create one to start organizing words.</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ back_url }}">Go Back</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

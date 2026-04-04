@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if topic_exists %}
+        {{ topic.name }} | Vocabulary Explorer
+    {% else %}
+        {{ topic_label }} | Vocabulary Explorer
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        <div class="page-nav">
+            <a class="back-nav" href="{{ back_url }}">Go Back</a>
+        </div>
+
+        <header class="mode-panel">
+            <form class="mode-form" action="{{ request.path }}" method="get">
+                <input type="hidden" name="back" value="{{ back_url }}">
+                <label class="field-label" for="mode">Mode</label>
+                <div class="select-shell">
+                    <select id="mode" name="mode" onchange="this.form.submit()">
+                        {% for mode in modes %}
+                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </header>
+
+        <main class="screen-content">
+            {% if topic_exists %}
+                <section class="content-section detail-section" aria-labelledby="topic-title">
+                    <p class="field-label detail-label">Topic</p>
+                    <h1 id="topic-title" class="detail-title">{{ topic.name }}</h1>
+                    <p class="topic-summary">{{ topic.summary }}</p>
+
+                    <div class="topic-grid detail-grid">
+                        {% for word in topic_words %}
+                            <a class="topic-card detail-card" href="{% url 'search-results' %}?q={{ word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                <strong>{{ word.english_word|title }}</strong>
+                                <span>{% if word.cree_translation %}{{ word.cree_translation }}{% else %}View word{% endif %}</span>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% else %}
+                <section class="content-section detail-section" aria-labelledby="topic-title">
+                    <p class="field-label detail-label">Topic Preview</p>
+                    <h1 id="topic-title" class="detail-title">{{ topic_label }}</h1>
+                    <p class="empty-state">This is a placeholder route for now. You can connect lessons or word lists here later.</p>
+                </section>
+            {% endif %}
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{% if current_mode == 'Standard' %}{% url 'bookmarks' %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}{% elif current_mode == 'Teacher' %}{% url 'lessons' %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}{% else %}{% url 'search-results' %}?q=horse&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}{% endif %}">
+                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
+            </a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}
