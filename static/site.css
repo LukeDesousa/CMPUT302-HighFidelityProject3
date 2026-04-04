@@ -293,6 +293,90 @@ button {
     color: var(--muted);
 }
 
+.section-head-split {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.graph-hint {
+    margin: 6px 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+    line-height: 1.5;
+}
+
+.graph-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.graph-control {
+    appearance: none;
+    min-width: 2.7rem;
+    min-height: 2.7rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(227, 240, 255, 0.72);
+    color: var(--ink);
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        transform 160ms ease,
+        border-color 160ms ease,
+        background-color 160ms ease,
+        color 160ms ease;
+}
+
+.graph-control-wide {
+    padding: 0 14px;
+}
+
+.graph-workspace {
+    display: grid;
+    gap: 12px;
+}
+
+.graph-status {
+    display: flex;
+    justify-content: flex-end;
+    color: var(--muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.graph-viewport {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 21rem;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: calc(var(--radius-card) + 2px);
+    background:
+        radial-gradient(circle at top, rgba(227, 240, 255, 0.92), transparent 40%),
+        linear-gradient(180deg, #ffffff 0%, #edf5ff 100%);
+    touch-action: none;
+    cursor: grab;
+}
+
+.graph-viewport.is-dragging {
+    cursor: grabbing;
+}
+
+.graph-stage {
+    position: relative;
+    width: 34rem;
+    height: 34rem;
+    flex: 0 0 auto;
+    transform-origin: center center;
+    will-change: transform;
+}
+
 .word-graph {
     position: relative;
     min-height: 18rem;
@@ -357,6 +441,11 @@ button {
     min-height: 5rem;
     border-color: var(--accent);
     background: linear-gradient(180deg, #ffffff 0%, #dfeeff 100%);
+}
+
+.research-summary {
+    display: grid;
+    gap: 16px;
 }
 
 .inline-form {
@@ -598,7 +687,9 @@ select:focus-visible,
 .recent-link:focus-visible,
 .back-nav:focus-visible,
 .action-button:focus-visible,
-.text-input:focus-visible {
+.text-input:focus-visible,
+.graph-control:focus-visible,
+.graph-viewport:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
 }
@@ -611,7 +702,8 @@ select:focus-visible,
 @media (hover: hover) {
     .topic-card:hover,
     .nav-link:hover,
-    .back-nav:hover {
+    .back-nav:hover,
+    .graph-control:hover {
         transform: translateY(-2px);
         border-color: var(--accent);
     }
@@ -649,6 +741,11 @@ select:focus-visible,
         border-color: var(--accent);
     }
 
+    .graph-control:hover {
+        color: var(--accent);
+        background: rgba(227, 240, 255, 0.96);
+    }
+
     .saved-card:hover {
         transform: translateY(-2px);
     }
@@ -676,5 +773,9 @@ select:focus-visible,
         border-radius: var(--radius-shell);
         background: rgba(255, 255, 255, 0.82);
         box-shadow: var(--shadow);
+    }
+
+    .research-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

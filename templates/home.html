@@ -21,7 +21,7 @@
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="search-heading">
                 <h2 id="search-heading" class="sr-only">Search</h2>
-                <form class="search-form" action="{% url 'search-results' %}" method="get" role="search">
+                <form class="search-form" action="{% url search_route_name %}" method="get" role="search">
                     <input type="hidden" name="mode" value="{{ current_mode }}">
                     <input type="hidden" name="back" value="{{ request.get_full_path }}">
                     <label class="sr-only" for="word-search">Search by word</label>
@@ -76,7 +76,7 @@
                 {% if recent_searches %}
                     <ul class="recent-list">
                         {% for search in recent_searches %}
-                            <li><a class="recent-link" href="{% url 'search-results' %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
+                            <li><a class="recent-link" href="{% url search_route_name %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
                         {% endfor %}
                     </ul>
                 {% else %}

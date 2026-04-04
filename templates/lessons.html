@@ -72,7 +72,7 @@
                                 {% if lesson.words %}
                                     <div class="related-group">
                                         {% for lesson_word in lesson.words %}
-                                            <a class="related-chip" href="{% url 'search-results' %}?q={{ lesson_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                            <a class="related-chip" href="{% url search_route_name %}?q={{ lesson_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
                                                 {{ lesson_word.english_word|title }}
                                                 <small>{% if lesson_word.cree_translation %}{{ lesson_word.cree_translation }}{% else %}View word{% endif %}</small>
                                             </a>

@@ -32,7 +32,7 @@
                     <div class="saved-grid">
                         {% for bookmark in bookmarks %}
                             <article class="saved-card">
-                                <a class="saved-card-link" href="{% url 'search-results' %}?q={{ bookmark.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                <a class="saved-card-link" href="{% url search_route_name %}?q={{ bookmark.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
                                     <strong>{{ bookmark.english_word|title }}</strong>
                                     <span>{% if bookmark.cree_translation %}{{ bookmark.cree_translation }}{% else %}View word{% endif %}</span>
                                 </a>

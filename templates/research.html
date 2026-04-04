@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Research Graph | Vocabulary Explorer{% endblock %}
+
+{% block extra_scripts %}
+    <script src="{% static 'graph.js' %}" defer></script>
+{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        <div class="page-nav">
+            <a class="back-nav" href="{{ back_url }}">Go Back</a>
+        </div>
+
+        <header class="mode-panel">
+            <form class="mode-form" action="{% url 'research' %}" method="get">
+                <input type="hidden" name="q" value="{{ search_query }}">
+                <input type="hidden" name="back" value="{{ back_url }}">
+                <label class="field-label" for="mode">Mode</label>
+                <div class="select-shell">
+                    <select id="mode" name="mode" onchange="this.form.submit()">
+                        {% for mode in modes %}
+                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </header>
+
+        <main class="screen-content">
+            <section class="search-panel" aria-labelledby="research-heading">
+                <div class="result-topline">
+                    <h1 id="research-heading" class="result-title">Research Graph</h1>
+                    <a class="recent-link back-home-link" href="{{ back_url }}">Go back</a>
+                </div>
+
+                <form class="search-form" action="{% url 'research' %}" method="get" role="search">
+                    <input type="hidden" name="mode" value="Research">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    <label class="sr-only" for="research-word-search">Search by word</label>
+                    <div class="search-field">
+                        <span class="search-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="6.5"></circle>
+                                <path d="M16 16l5 5"></path>
+                            </svg>
+                        </span>
+                        <input
+                            id="research-word-search"
+                            name="q"
+                            type="search"
+                            value="{{ search_query }}"
+                            autocomplete="off"
+                        >
+                    </div>
+                </form>
+            </section>
+
+            {% if result %}
+                <section class="content-section" aria-labelledby="graph-summary-title">
+                    <div class="section-head">
+                        <h2 id="graph-summary-title">Word Map</h2>
+                    </div>
+
+                    <div class="translation-card research-summary">
+                        <div>
+                            <p class="translation-language">{{ result.topic_name }}</p>
+                            <p class="result-english">{{ result.english_word|title }}</p>
+                        </div>
+
+                        <div>
+                            {% if result.has_translation %}
+                                <p class="translation-language">{{ result.cree_label }}</p>
+                                <p class="translation-word">{{ result.cree_translation }}</p>
+                            {% else %}
+                                <p class="translation-language">Cree</p>
+                                <p class="translation-word translation-pending">No translation available</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </section>
+
+                <section class="content-section" aria-labelledby="graph-workspace-title">
+                    <div class="section-head section-head-split">
+                        <div>
+                            <h2 id="graph-workspace-title">Explore Connections</h2>
+                            <p class="graph-hint">Drag to move. Pinch, scroll, or use the controls to zoom.</p>
+                        </div>
+
+                        <div class="graph-toolbar" aria-label="Graph controls">
+                            <button class="graph-control" type="button" data-graph-zoom-out aria-label="Zoom Out">-</button>
+                            <button class="graph-control graph-control-wide" type="button" data-graph-reset>Center</button>
+                            <button class="graph-control" type="button" data-graph-zoom-in aria-label="Zoom In">+</button>
+                        </div>
+                    </div>
+
+                    <div class="graph-workspace" data-graph-workspace>
+                        <div class="graph-status">
+                            <span data-graph-zoom-value>100%</span>
+                        </div>
+
+                        <div class="graph-viewport" data-graph-viewport tabindex="0" aria-label="Interactive research graph">
+                            <div class="graph-stage" data-graph-stage>
+                                <svg class="graph-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                    {% for line in research_graph.lines %}
+                                        <line x1="{{ line.x1 }}" y1="{{ line.y1 }}" x2="{{ line.x2 }}" y2="{{ line.y2 }}"></line>
+                                    {% endfor %}
+                                </svg>
+
+                                {% for node in research_graph.nodes %}
+                                    <div class="graph-node graph-node-{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                        <strong>{{ node.label }}</strong>
+                                        <span>{{ node.meta }}</span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="content-section" aria-labelledby="research-links-title">
+                    <div class="section-head">
+                        <h2 id="research-links-title">Related Words</h2>
+                    </div>
+
+                    <div class="related-group" aria-label="Related words">
+                        {% for item in result.related_words %}
+                            <a class="related-chip" href="{% url 'research' %}?q={{ item.english|urlencode }}&mode=Research&back={{ current_page_url|urlencode }}">
+                                {{ item.english|title }}
+                                <small>{% if item.cree %}{{ item.cree }}{% else %}Open graph{% endif %}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% else %}
+                <section class="content-section" aria-labelledby="no-result-title">
+                    <div class="section-head">
+                        <h2 id="no-result-title">No Results Found</h2>
+                    </div>
+
+                    <p class="empty-state">No results were found for "{{ search_query }}". Try one of the suggestions below.</p>
+
+                    <div class="related-group" aria-label="Suggested words">
+                        {% for word in suggested_words %}
+                            <a class="related-chip" href="{% url 'research' %}?q={{ word|urlencode }}&mode=Research&back={{ back_url|urlencode }}">
+                                {{ word|title }}
+                                <small>Open graph</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </section>
+            {% endif %}
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ current_page_url }}">Graph</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

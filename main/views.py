@@ -148,6 +148,22 @@ def get_safe_back_url(raw_back_url, fallback_url):
     return fallback_url
 
 
+def get_word_route_name(current_mode):
+    return "research" if current_mode == "Research" else "search-results"
+
+
+def build_word_lookup_url(search_query, current_mode, back_url):
+    normalized_query = (search_query or "horse").strip() or "horse"
+    return build_url(
+        get_word_route_name(current_mode),
+        params={
+            "q": normalized_query,
+            "mode": current_mode,
+            "back": back_url,
+        },
+    )
+
+
 def get_bookmarks(request):
     bookmarks = request.session.get("bookmarks", [])
     return [word for word in bookmarks if word in WORD_LIBRARY]
@@ -282,16 +298,7 @@ def handle_search_actions(request, current_mode, word_key, back_url):
             bookmarks = [word_key, *[bookmark for bookmark in bookmarks if bookmark != word_key]]
         save_bookmarks(request, bookmarks)
 
-    return redirect(
-        build_url(
-            "search-results",
-            params={
-                "q": request.POST.get("q", word_key or "horse"),
-                "mode": current_mode,
-                "back": back_url,
-            },
-        )
-    )
+    return redirect(build_word_lookup_url(request.POST.get("q", word_key or "horse"), current_mode, back_url))
 
 
 def handle_bookmark_actions(request, current_mode, back_url):
@@ -357,18 +364,12 @@ def home(request):
     context = {
         "current_mode": current_mode,
         "modes": MODES,
+        "search_route_name": get_word_route_name(current_mode),
         "recent_searches": RECENT_SEARCHES,
         "topics": TOPICS,
         "bookmark_count": len(get_bookmarks(request)),
         "lesson_count": len(get_lessons(request)),
-        "research_sample_url": build_url(
-            "search-results",
-            params={
-                "q": "horse",
-                "mode": "Research",
-                "back": home_back_url,
-            },
-        ),
+        "research_sample_url": build_word_lookup_url("horse", "Research", home_back_url),
         "bookmarks_url": build_url(
             "bookmarks",
             params={
@@ -401,6 +402,9 @@ def search_results(request):
     if request.method == "POST":
         return handle_search_actions(request, current_mode, normalized_query, back_url)
 
+    if current_mode == "Research":
+        return redirect(build_word_lookup_url(search_query, current_mode, back_url))
+
     result = build_word_result(normalized_query) if normalized_query in WORD_LIBRARY else None
     bookmarks = get_bookmarks(request)
 
@@ -419,10 +423,11 @@ def search_results(request):
     context = {
         "current_mode": current_mode,
         "modes": MODES,
+        "search_route_name": get_word_route_name(current_mode),
         "search_query": search_query,
         "result": result,
         "back_url": back_url,
-        "research_graph": build_graph_data(result) if current_mode == "Research" and result else None,
+        "research_url": build_word_lookup_url(search_query, "Research", current_page_url),
         "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in RECENT_SEARCHES],
         "bookmarks_url": build_url(
             "bookmarks",
@@ -443,6 +448,36 @@ def search_results(request):
     return render(request, "search_results.html", context)
 
 
+def research_page(request):
+    requested_mode = request.GET.get("mode") or "Research"
+    current_mode = requested_mode if requested_mode in MODES else "Research"
+    fallback_back_url = build_url("home", params={"mode": "Research"})
+    back_url = get_safe_back_url(request.GET.get("back"), fallback_back_url)
+    search_query = (request.GET.get("q", "horse") or "horse").strip() or "horse"
+
+    if current_mode != "Research":
+        return redirect(build_word_lookup_url(search_query, current_mode, back_url))
+
+    normalized_query = search_query.lower()
+    result = build_word_result(normalized_query) if normalized_query in WORD_LIBRARY else None
+    current_page_url = build_word_lookup_url(search_query, current_mode, back_url)
+
+    return render(
+        request,
+        "research.html",
+        {
+            "current_mode": current_mode,
+            "modes": MODES,
+            "search_query": search_query,
+            "result": result,
+            "back_url": back_url,
+            "current_page_url": current_page_url,
+            "research_graph": build_graph_data(result) if result else None,
+            "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in RECENT_SEARCHES],
+        },
+    )
+
+
 def bookmarks_page(request):
     current_mode = get_current_mode(request)
     fallback_back_url = build_url("home", params={"mode": current_mode})
@@ -460,6 +495,7 @@ def bookmarks_page(request):
         {
             "current_mode": current_mode,
             "modes": MODES,
+            "search_route_name": get_word_route_name(current_mode),
             "back_url": back_url,
             "bookmarks": build_bookmark_results(request),
         },
@@ -489,6 +525,7 @@ def lessons_page(request):
         {
             "current_mode": current_mode,
             "modes": MODES,
+            "search_route_name": get_word_route_name(current_mode),
             "back_url": back_url,
             "selected_word": selected_word,
             "selected_result": build_word_result(selected_word) if selected_word else None,
@@ -510,9 +547,11 @@ def topic_detail(request, topic_name):
             {
                 "current_mode": current_mode,
                 "modes": MODES,
+                "search_route_name": get_word_route_name(current_mode),
                 "topic_exists": False,
                 "topic_label": topic_name.replace("-", " ").title(),
                 "back_url": back_url,
+                "research_sample_url": build_word_lookup_url("horse", "Research", back_url),
             },
         )
 
@@ -524,9 +563,11 @@ def topic_detail(request, topic_name):
         {
             "current_mode": current_mode,
             "modes": MODES,
+            "search_route_name": get_word_route_name(current_mode),
             "topic_exists": True,
             "topic": topic,
             "topic_words": topic_words,
             "back_url": back_url,
+            "research_sample_url": build_word_lookup_url(topic["words"][0], "Research", back_url),
         },
     )

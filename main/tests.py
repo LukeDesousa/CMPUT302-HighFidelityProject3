@@ -23,17 +23,26 @@ class HomePageTests(TestCase):
             self.assertContains(response, label)
             self.assertContains(response, reverse("topic-detail", args=[slug]))
 
-    def test_research_mode_search_results_renders_graph(self):
-        response = self.client.get(
+    def test_research_mode_has_dedicated_graph_page(self):
+        redirect_response = self.client.get(
             reverse("search-results"),
+            {"q": "horse", "mode": "Research"},
+        )
+
+        self.assertEqual(redirect_response.status_code, 302)
+        self.assertIn(reverse("research"), redirect_response.url)
+
+        response = self.client.get(
+            reverse("research"),
             {"q": "horse", "mode": "Research"},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Research Graph")
         self.assertContains(response, "mistatim")
-        self.assertContains(response, "Search Word")
-        self.assertContains(response, "Animals")
+        self.assertContains(response, "Drag to move")
+        self.assertContains(response, "Zoom In")
+        self.assertContains(response, 'data-graph-workspace', html=False)
 
     def test_standard_mode_can_toggle_bookmark(self):
         response = self.client.post(
