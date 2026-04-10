@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}
     {% if topic_exists %}
@@ -8,41 +9,80 @@
     {% endif %}
 {% endblock %}
 
+{% block extra_scripts %}
+    {% if topic_exists and topic_view == "map" %}
+        <script src="{% static 'graph.js' %}" defer></script>
+    {% endif %}
+{% endblock %}
+
 {% block content %}
     <div class="app-shell">
-        <div class="page-nav">
-            <a class="back-nav" href="{{ back_url }}">Go Back</a>
-        </div>
-
-        <header class="mode-panel">
-            <form class="mode-form" action="{{ request.path }}" method="get">
-                <input type="hidden" name="back" value="{{ back_url }}">
-                <label class="field-label" for="mode">Mode</label>
-                <div class="select-shell">
-                    <select id="mode" name="mode" onchange="this.form.submit()">
-                        {% for mode in modes %}
-                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </header>
+        {% include "includes/top_nav.html" with title=topic_label show_back=True %}
 
         <main class="screen-content">
             {% if topic_exists %}
                 <section class="content-section detail-section" aria-labelledby="topic-title">
-                    <p class="field-label detail-label">Topic</p>
-                    <h1 id="topic-title" class="detail-title">{{ topic.name }}</h1>
-                    <p class="topic-summary">{{ topic.summary }}</p>
+                    <div class="section-head section-head-split">
+                        <div>
+                            <p class="field-label detail-label">Topic</p>
+                            <h1 id="topic-title" class="detail-title">{{ topic.name }}</h1>
+                        </div>
 
-                    <div class="topic-grid detail-grid">
-                        {% for word in topic_words %}
-                            <a class="topic-card detail-card" href="{% url search_route_name %}?q={{ word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
-                                <strong>{{ word.english_word|title }}</strong>
-                                <span>{% if word.cree_translation %}{{ word.cree_translation }}{% else %}View word{% endif %}</span>
-                            </a>
-                        {% endfor %}
+                        <div class="view-toggle" aria-label="Topic display">
+                            <a class="toggle-link {% if topic_view == 'list' %}is-active{% endif %}" href="{{ list_view_url }}">List</a>
+                            <a class="toggle-link {% if topic_view == 'map' %}is-active{% endif %}" href="{{ map_view_url }}">Map</a>
+                        </div>
                     </div>
+
+                    <p class="topic-summary">{{ topic.summary }}</p>
+                    <p class="graph-hint">{{ topic_words|length }} words in this topic. Switch between the list and map view any time.</p>
+
+                    {% if topic_view == "map" %}
+                        <div class="graph-workspace" data-graph-workspace data-graph-initial-scale="0.88">
+                            <div class="graph-status">
+                                <span data-graph-zoom-value>100%</span>
+                            </div>
+
+                            <div class="graph-toolbar graph-toolbar-inline" aria-label="Topic map controls">
+                                <button class="graph-control" type="button" data-graph-zoom-out aria-label="Zoom Out">-</button>
+                                <button class="graph-control graph-control-wide" type="button" data-graph-reset>Center</button>
+                                <button class="graph-control" type="button" data-graph-zoom-in aria-label="Zoom In">+</button>
+                            </div>
+
+                            <div class="graph-viewport compact-graph" data-graph-viewport tabindex="0" aria-label="Interactive topic map">
+                                <div class="graph-stage" data-graph-stage>
+                                    <svg class="graph-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                                        {% for line in topic_graph.lines %}
+                                            <line x1="{{ line.x1 }}" y1="{{ line.y1 }}" x2="{{ line.x2 }}" y2="{{ line.y2 }}"></line>
+                                        {% endfor %}
+                                    </svg>
+
+                                    {% for node in topic_graph.nodes %}
+                                        {% if node.url %}
+                                            <a class="graph-node graph-node-{{ node.kind }} graph-node-link" href="{{ node.url }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                                <strong>{{ node.label }}</strong>
+                                                <span>{{ node.meta }}</span>
+                                            </a>
+                                        {% else %}
+                                            <div class="graph-node graph-node-{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                                <strong>{{ node.label }}</strong>
+                                                <span>{{ node.meta }}</span>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="topic-grid detail-grid">
+                            {% for word in topic_words %}
+                                <a class="topic-card detail-card" href="{% url search_route_name %}?q={{ word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}">
+                                    <strong>{{ word.english_word|title }}</strong>
+                                    <span>{% if word.cree_translation %}{{ word.cree_translation }}{% else %}View word{% endif %}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
                 </section>
             {% else %}
                 <section class="content-section detail-section" aria-labelledby="topic-title">
@@ -54,9 +94,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{% if current_mode == 'Standard' %}{% url 'bookmarks' %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}{% elif current_mode == 'Teacher' %}{% url 'lessons' %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}{% else %}{{ research_sample_url }}{% endif %}">
-                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
-            </a>
+            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Topic</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -65,7 +103,9 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+            <a class="nav-link" href="{% if current_mode == 'Standard' %}{% url 'bookmarks' %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}{% elif current_mode == 'Teacher' %}{% url 'lessons' %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}{% else %}{{ research_sample_url }}{% endif %}">
+                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
+            </a>
         </nav>
     </div>
 {% endblock %}

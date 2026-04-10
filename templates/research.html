@@ -9,36 +9,24 @@
 
 {% block content %}
     <div class="app-shell">
-        <div class="page-nav">
-            <a class="back-nav" href="{{ back_url }}">Go Back</a>
-        </div>
-
-        <header class="mode-panel">
-            <form class="mode-form" action="{% url 'research' %}" method="get">
-                <input type="hidden" name="q" value="{{ search_query }}">
-                <input type="hidden" name="back" value="{{ back_url }}">
-                <label class="field-label" for="mode">Mode</label>
-                <div class="select-shell">
-                    <select id="mode" name="mode" onchange="this.form.submit()">
-                        {% for mode in modes %}
-                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </header>
+        {% include "includes/top_nav.html" with title="Research" show_back=True %}
 
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="research-heading">
                 <div class="result-topline">
                     <h1 id="research-heading" class="result-title">Research Graph</h1>
-                    <a class="recent-link back-home-link" href="{{ back_url }}">Go back</a>
                 </div>
 
-                <form class="search-form" action="{% url 'research' %}" method="get" role="search">
+                <form
+                    class="search-form search-form-stack"
+                    action="{{ search_word_action }}"
+                    method="get"
+                    role="search"
+                    data-search-form
+                >
                     <input type="hidden" name="mode" value="Research">
                     <input type="hidden" name="back" value="{{ back_url }}">
-                    <label class="sr-only" for="research-word-search">Search by word</label>
+                    <label class="sr-only" for="research-word-search">Search words or categories</label>
                     <div class="search-field">
                         <span class="search-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -51,9 +39,13 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
+                            placeholder="Search a word or category..."
+                            data-search-query
                             autocomplete="off"
                         >
                     </div>
+                    <div class="search-suggestions" data-search-suggestions hidden></div>
+                    <script type="application/json" data-search-suggestions-source>{{ search_suggestions_json|safe }}</script>
                 </form>
             </section>
 
@@ -81,6 +73,35 @@
                     </div>
                 </section>
 
+                <section class="content-section" aria-labelledby="research-details-title">
+                    <div class="section-head">
+                        <h2 id="research-details-title">Research Details</h2>
+                    </div>
+
+                    <div class="research-data-grid">
+                        <article class="research-data-card">
+                            <p class="translation-language">Roman Orthography</p>
+                            <p class="research-data-value">{% if result.has_translation %}{{ result.cree_translation }}{% else %}Not available{% endif %}</p>
+                        </article>
+                        <article class="research-data-card">
+                            <p class="translation-language">Syllabics</p>
+                            <p class="research-data-value">{% if result.syllabics %}{{ result.syllabics }}{% else %}Not available{% endif %}</p>
+                        </article>
+                        <article class="research-data-card">
+                            <p class="translation-language">Word Class</p>
+                            <p class="research-data-value">{% if result.word_class %}{{ result.word_class }}{% else %}Not available{% endif %}</p>
+                        </article>
+                        <article class="research-data-card">
+                            <p class="translation-language">Source</p>
+                            <p class="research-data-value">{% if result.research_source %}{{ result.research_source }}{% else %}Prototype data{% endif %}</p>
+                        </article>
+                    </div>
+
+                    {% if result.dictionary_note %}
+                        <p class="mode-intro research-note">{{ result.dictionary_note }}</p>
+                    {% endif %}
+                </section>
+
                 <section class="content-section" aria-labelledby="graph-workspace-title">
                     <div class="section-head section-head-split">
                         <div>
@@ -95,7 +116,7 @@
                         </div>
                     </div>
 
-                    <div class="graph-workspace" data-graph-workspace>
+                    <div class="graph-workspace" data-graph-workspace data-graph-initial-scale="0.84">
                         <div class="graph-status">
                             <span data-graph-zoom-value>100%</span>
                         </div>
@@ -154,7 +175,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{{ current_page_url }}">Graph</a>
+            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Graph</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -163,7 +184,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
         </nav>
     </div>
 {% endblock %}

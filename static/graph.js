@@ -20,13 +20,18 @@
         const zoomInButton = workspace.querySelector("[data-graph-zoom-in]");
         const zoomOutButton = workspace.querySelector("[data-graph-zoom-out]");
         const resetButton = workspace.querySelector("[data-graph-reset]");
+        const defaultScale = clamp(
+            Number.parseFloat(workspace.dataset.graphInitialScale || "1") || 1,
+            MIN_SCALE,
+            MAX_SCALE,
+        );
 
         if (!viewport || !stage) {
             return;
         }
 
         const state = {
-            scale: 1,
+            scale: defaultScale,
             x: 0,
             y: 0,
             pointers: new Map(),
@@ -73,7 +78,7 @@
         };
 
         const centerGraph = () => {
-            state.scale = 1;
+            state.scale = defaultScale;
             state.x = 0;
             state.y = 0;
             applyTransform(true);

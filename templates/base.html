@@ -10,6 +10,12 @@
 </head>
 <body>
     {% block content %}{% endblock %}
+    {% if toast %}
+        <div class="toast toast-{{ toast.kind }}" data-toast role="status" aria-live="polite">
+            {{ toast.message }}
+        </div>
+    {% endif %}
+    <script src="{% static 'app.js' %}" defer></script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

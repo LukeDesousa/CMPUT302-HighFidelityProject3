@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Browse Topics | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        {% include "includes/top_nav.html" with title="Categories" show_back=True %}
+
+        <main class="screen-content">
+            <section class="search-panel" aria-labelledby="topics-search-title">
+                <div class="result-topline">
+                    <h1 id="topics-search-title" class="result-title">Browse Topics</h1>
+                </div>
+
+                <form
+                    class="search-form search-form-stack"
+                    action="{{ search_category_action }}"
+                    method="get"
+                    role="search"
+                    data-search-form
+                >
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    <label class="sr-only" for="topics-search-input">Search words or categories</label>
+                    <div class="search-field">
+                        <span class="search-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="6.5"></circle>
+                                <path d="M16 16l5 5"></path>
+                            </svg>
+                        </span>
+                        <input
+                            id="topics-search-input"
+                            name="q"
+                            type="search"
+                            value="{{ search_query }}"
+                            placeholder="Search a word or category..."
+                            data-search-query
+                            autocomplete="off"
+                        >
+                    </div>
+                    <div class="search-suggestions" data-search-suggestions hidden></div>
+                    <script type="application/json" data-search-suggestions-source>{{ search_suggestions_json|safe }}</script>
+                </form>
+            </section>
+
+            <section class="content-section" aria-labelledby="topics-title">
+                <div class="section-head">
+                    <h2 id="topics-title">Topic Results</h2>
+                </div>
+
+                {% if has_topic_filter %}
+                    <p class="mode-intro">Showing {{ filtered_topic_count }} topic matches for "{{ search_query }}". Browse all {{ topic_count }} prototype topics by clearing the search.</p>
+                {% else %}
+                    <p class="mode-intro">Home shows 6 featured topics. This page shows all {{ topic_count }} topics in the prototype database.</p>
+                {% endif %}
+
+                {% if topics %}
+                    <div class="saved-grid">
+                        {% for topic in topics %}
+                            <a class="browse-topic-card" href="{{ topic.url }}">
+                                <p class="translation-language">Topic</p>
+                                <strong>{{ topic.name }}</strong>
+                                <span>{{ topic.summary }}</span>
+                                <p class="card-meta">{{ topic.word_count }} words - {{ topic.preview_words|join:", " }}</p>
+                            </a>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">No matching categories were found. Try a broader category name such as Animals or Family.</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Topics</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{% if current_mode == 'Standard' %}{{ bookmarks_url }}{% elif current_mode == 'Teacher' %}{{ lessons_url }}{% else %}{{ research_sample_url }}{% endif %}">
+                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
+            </a>
+        </nav>
+    </div>
+{% endblock %}

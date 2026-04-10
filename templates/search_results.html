@@ -4,36 +4,24 @@
 
 {% block content %}
     <div class="app-shell">
-        <div class="page-nav">
-            <a class="back-nav" href="{{ back_url }}">Go Back</a>
-        </div>
-
-        <header class="mode-panel">
-            <form class="mode-form" action="{% url 'search-results' %}" method="get">
-                <input type="hidden" name="q" value="{{ search_query }}">
-                <input type="hidden" name="back" value="{{ back_url }}">
-                <label class="field-label" for="mode">Mode</label>
-                <div class="select-shell">
-                    <select id="mode" name="mode" onchange="this.form.submit()">
-                        {% for mode in modes %}
-                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </header>
+        {% include "includes/top_nav.html" with title="Search" show_back=True %}
 
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="search-heading">
                 <div class="result-topline">
                     <h1 id="search-heading" class="result-title">Search Result</h1>
-                    <a class="recent-link back-home-link" href="{{ back_url }}">Go back</a>
                 </div>
 
-                <form class="search-form" action="{% url 'search-results' %}" method="get" role="search">
+                <form
+                    class="search-form search-form-stack"
+                    action="{{ search_word_action }}"
+                    method="get"
+                    role="search"
+                    data-search-form
+                >
                     <input type="hidden" name="mode" value="{{ current_mode }}">
                     <input type="hidden" name="back" value="{{ back_url }}">
-                    <label class="sr-only" for="result-word-search">Search by word</label>
+                    <label class="sr-only" for="result-word-search">Search words or categories</label>
                     <div class="search-field">
                         <span class="search-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -46,9 +34,13 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
+                            placeholder="Search a word or category..."
+                            data-search-query
                             autocomplete="off"
                         >
                     </div>
+                    <div class="search-suggestions" data-search-suggestions hidden></div>
+                    <script type="application/json" data-search-suggestions-source>{{ search_suggestions_json|safe }}</script>
                 </form>
             </section>
 
@@ -85,8 +77,9 @@
                         <h2 id="topic-link-title">Browse This Topic</h2>
                     </div>
 
-                    <a class="topic-card topic-link-card" href="{% url 'topic-detail' result.topic_slug %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
-                        Open {{ result.topic_name }}
+                    <p class="mode-intro">Open {{ result.topic_name }} to switch between the word list and the topic map.</p>
+                    <a class="topic-card topic-link-card" href="{% url 'topic-detail' result.topic_slug %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}">
+                        View {{ result.topic_name }} Topic
                     </a>
                 </section>
 
@@ -94,36 +87,65 @@
                     <div class="section-head">
                         <h2 id="mode-tools-title">
                             {% if current_mode == "Standard" %}
-                                Bookmark Tools
+                                Bookmark
                             {% else %}
-                                Lesson Tools
+                                Lessons
                             {% endif %}
                         </h2>
                     </div>
 
                     {% if current_mode == "Standard" %}
-                        <div class="stack-actions">
-                            <form class="inline-form" method="post" action="{% url 'search-results' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="toggle_bookmark">
-                                <input type="hidden" name="mode" value="{{ current_mode }}">
-                                <input type="hidden" name="q" value="{{ search_query }}">
-                                <input type="hidden" name="back" value="{{ back_url }}">
-                                <button class="action-button" type="submit">
-                                    {% if result.is_bookmarked %}
-                                        Remove Bookmark
-                                    {% else %}
-                                        Save Bookmark
-                                    {% endif %}
-                                </button>
-                            </form>
+                        <p class="mode-intro">{{ bookmark_count }} saved words in your bookmark library.</p>
 
-                            <a class="topic-card topic-link-card" href="{{ bookmarks_url }}">Open Bookmarks Page</a>
-                        </div>
+                        <form class="inline-form" method="post" action="{% url 'search-results' %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="toggle_bookmark">
+                            <input type="hidden" name="mode" value="{{ current_mode }}">
+                            <input type="hidden" name="q" value="{{ search_query }}">
+                            <input type="hidden" name="back" value="{{ back_url }}">
+                            <input type="hidden" name="search_type" value="{{ current_search_type }}">
+                            <button class="action-button" type="submit">
+                                {% if result.is_bookmarked %}
+                                    Remove Bookmark
+                                {% else %}
+                                    Save Bookmark
+                                {% endif %}
+                            </button>
+                        </form>
                     {% else %}
                         <div class="stack-actions">
-                            <p class="mode-intro">Open lessons to create sets and add this word to class material.</p>
-                            <a class="topic-card topic-link-card" href="{{ lessons_url }}">Open Lessons Page</a>
+                            <p class="mode-intro">{{ lesson_count }} lessons available. Open the lesson builder to create a new lesson with this word, or add it to one below.</p>
+                            <a class="action-button" href="{{ lessons_url }}">Create New Lesson</a>
+
+                            {% if lessons %}
+                                <div class="lesson-stack">
+                                    {% for lesson in lessons %}
+                                        <article class="lesson-card">
+                                            <div class="lesson-card-top">
+                                                <h3>{{ lesson.name }}</h3>
+                                                <span>{{ lesson.word_count }} words</span>
+                                            </div>
+
+                                            {% if lesson.contains_current %}
+                                                <span class="status-pill">Already added</span>
+                                            {% else %}
+                                                <form class="inline-form inline-form-compact" method="post" action="{% url 'search-results' %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="add_to_lesson">
+                                                    <input type="hidden" name="lesson_name" value="{{ lesson.name }}">
+                                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                                    <input type="hidden" name="q" value="{{ search_query }}">
+                                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                                    <input type="hidden" name="search_type" value="{{ current_search_type }}">
+                                                    <button class="action-button" type="submit">Add {{ result.english_word|title }}</button>
+                                                </form>
+                                            {% endif %}
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <p class="empty-state">No lessons yet. Use Create New Lesson to start organizing words.</p>
+                            {% endif %}
                         </div>
                     {% endif %}
                 </section>
@@ -159,7 +181,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
         </nav>
     </div>
 {% endblock %}

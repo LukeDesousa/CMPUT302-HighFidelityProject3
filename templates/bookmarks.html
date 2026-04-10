@@ -4,29 +4,15 @@
 
 {% block content %}
     <div class="app-shell">
-        <div class="page-nav">
-            <a class="back-nav" href="{{ back_url }}">Go Back</a>
-        </div>
-
-        <header class="mode-panel">
-            <form class="mode-form" action="{% url 'bookmarks' %}" method="get">
-                <input type="hidden" name="back" value="{{ back_url }}">
-                <label class="field-label" for="mode">Mode</label>
-                <div class="select-shell">
-                    <select id="mode" name="mode" onchange="this.form.submit()">
-                        {% for mode in modes %}
-                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </header>
+        {% include "includes/top_nav.html" with title="Bookmarks" show_back=True %}
 
         <main class="screen-content">
             <section class="content-section" aria-labelledby="bookmarks-title">
                 <div class="section-head">
                     <h1 id="bookmarks-title" class="result-title">Bookmarks</h1>
                 </div>
+
+                <p class="mode-intro">{{ bookmarks|length }} saved words in this session.</p>
 
                 {% if bookmarks %}
                     <div class="saved-grid">
@@ -55,7 +41,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{{ back_url }}">Go Back</a>
+            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Bookmarks</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -64,7 +50,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
         </nav>
     </div>
 {% endblock %}

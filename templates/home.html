@@ -4,27 +4,21 @@
 
 {% block content %}
     <div class="app-shell">
-        <header class="mode-panel">
-            <h1 class="sr-only">Vocabulary Explorer</h1>
-            <form class="mode-form" action="{% url 'home' %}" method="get">
-                <label class="field-label" for="mode">Mode</label>
-                <div class="select-shell">
-                    <select id="mode" name="mode" onchange="this.form.submit()">
-                        {% for mode in modes %}
-                            <option value="{{ mode }}" {% if mode == current_mode %}selected{% endif %}>{{ mode }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </form>
-        </header>
+        {% include "includes/top_nav.html" with title="Vocabulary Explorer" show_back=False %}
 
-        <main class="screen-content">
-            <section class="search-panel" aria-labelledby="search-heading">
+        <main class="screen-content home-screen">
+            <section class="search-panel home-search-panel" aria-labelledby="search-heading">
                 <h2 id="search-heading" class="sr-only">Search</h2>
-                <form class="search-form" action="{% url search_route_name %}" method="get" role="search">
+                <form
+                    class="search-form search-form-stack"
+                    action="{{ search_word_action }}"
+                    method="get"
+                    role="search"
+                    data-search-form
+                >
                     <input type="hidden" name="mode" value="{{ current_mode }}">
                     <input type="hidden" name="back" value="{{ request.get_full_path }}">
-                    <label class="sr-only" for="word-search">Search by word</label>
+                    <label class="sr-only" for="word-search">Search words or categories</label>
                     <div class="search-field">
                         <span class="search-icon" aria-hidden="true">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -36,62 +30,76 @@
                             id="word-search"
                             name="q"
                             type="search"
-                            placeholder="Search by word..."
+                            value="{{ search_query }}"
+                            placeholder="Search a word or category..."
+                            data-search-query
                             autocomplete="off"
                         >
                     </div>
+                    <div class="search-suggestions" data-search-suggestions hidden></div>
+                    <script type="application/json" data-search-suggestions-source>{{ search_suggestions_json|safe }}</script>
                 </form>
             </section>
 
-            <section class="content-section" id="mode-hub" aria-labelledby="mode-hub-title">
-                <div class="section-head">
-                    <h2 id="mode-hub-title">
+            <div class="home-dashboard-grid">
+                <section class="content-section home-panel home-feature-panel" id="mode-hub" aria-labelledby="mode-hub-title">
+                    <div class="section-head">
+                        <h2 id="mode-hub-title">
+                            {% if current_mode == "Research" %}
+                                Research Mode
+                            {% elif current_mode == "Standard" %}
+                                Bookmark Library
+                            {% else %}
+                                Lesson Builder
+                            {% endif %}
+                        </h2>
+                    </div>
+
+                    <div class="overview-card">
                         {% if current_mode == "Research" %}
-                            Research Mode
+                            <p class="mode-intro">Search a word or open a topic to switch between list and map views.</p>
+                            <p class="overview-metric"><strong>2 views</strong><span>Topic words can now be browsed as a list or a map.</span></p>
                         {% elif current_mode == "Standard" %}
-                            Bookmark Library
+                            <p class="mode-intro">{{ bookmark_count }} saved words ready to review from the bottom bar.</p>
+                            <p class="overview-metric"><strong>{{ bookmark_count }}</strong><span>Bookmarks saved in this session.</span></p>
                         {% else %}
-                            Lesson Builder
+                            <p class="mode-intro">{{ lesson_count }} lessons created so far. Use the bottom bar to manage them.</p>
+                            <p class="overview-metric"><strong>{{ lesson_count }}</strong><span>Lesson sets ready for editing.</span></p>
                         {% endif %}
-                    </h2>
-                </div>
+                    </div>
+                </section>
 
-                {% if current_mode == "Research" %}
-                    <p class="mode-intro">Search for a word to open a connected research graph.</p>
-                    <a class="topic-card topic-link-card" href="{{ research_sample_url }}">Open Sample Graph</a>
-                {% elif current_mode == "Standard" %}
-                    <p class="mode-intro">{{ bookmark_count }} saved words ready to review.</p>
-                    <a class="topic-card topic-link-card" href="{{ bookmarks_url }}">Open Bookmarks</a>
-                {% else %}
-                    <p class="mode-intro">{{ lesson_count }} lessons created so far.</p>
-                    <a class="topic-card topic-link-card" href="{{ lessons_url }}">Open Lessons</a>
-                {% endif %}
-            </section>
+                <section class="content-section home-panel home-recent-panel" aria-labelledby="recent-searches-title">
+                    <div class="section-head">
+                        <h2 id="recent-searches-title">Recent Searches</h2>
+                    </div>
 
-            <section class="content-section" aria-labelledby="recent-searches-title">
-                <div class="section-head">
-                    <h2 id="recent-searches-title">Recent Searches</h2>
-                </div>
+                    {% if recent_searches %}
+                        <ul class="recent-list">
+                            {% for search in recent_searches %}
+                                <li><a class="recent-link" href="{% url search_route_name %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="empty-state">No recent searches yet. Your latest looked-up words will appear here.</p>
+                    {% endif %}
+                </section>
+            </div>
 
-                {% if recent_searches %}
-                    <ul class="recent-list">
-                        {% for search in recent_searches %}
-                            <li><a class="recent-link" href="{% url search_route_name %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
-                        {% endfor %}
-                    </ul>
-                {% else %}
-                    <p class="empty-state">No recent searches yet. Your latest looked-up words will appear here.</p>
-                {% endif %}
-            </section>
-
-            <section class="content-section" id="topics" aria-labelledby="topics-title">
-                <div class="section-head">
+            <section class="content-section home-panel home-topics-panel" id="topics" aria-labelledby="topics-title">
+                <div class="section-head section-head-split">
                     <h2 id="topics-title">Explore by Topics</h2>
+                    <a class="recent-link" href="{{ browse_topics_url }}">Browse All</a>
                 </div>
+
+                <p class="graph-hint">Home shows 6 featured topics. Browse Topics opens the full {{ all_topic_count }}-topic library.</p>
 
                 <div class="topic-grid">
-                    {% for topic in topics %}
-                        <a class="topic-card" href="{% url 'topic-detail' topic.slug %}?mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ topic.name }}</a>
+                    {% for topic in featured_topics %}
+                        <a class="topic-card topic-card-detail" href="{{ topic.url }}">
+                            <strong>{{ topic.name }}</strong>
+                            <span>{{ topic.word_count }} words</span>
+                        </a>
                     {% endfor %}
                 </div>
             </section>
@@ -109,7 +117,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% url 'home' %}?mode={{ current_mode|urlencode }}#topics">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
         </nav>
     </div>
 {% endblock %}
