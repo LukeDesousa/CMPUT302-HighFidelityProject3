@@ -1,15 +1,15 @@
 {% extends "base.html" %}
 
-{% block title %}Search Result | Vocabulary Explorer{% endblock %}
+{% block title %}Word Result | Vocabulary Explorer{% endblock %}
 
 {% block content %}
     <div class="app-shell">
-        {% include "includes/top_nav.html" with title="Search" show_back=True %}
+        {% include "includes/top_nav.html" with title="Explore" show_back=True %}
 
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="search-heading">
                 <div class="result-topline">
-                    <h1 id="search-heading" class="result-title">Search Result</h1>
+                    <h1 id="search-heading" class="result-title">Word Result</h1>
                 </div>
 
                 <form
@@ -34,7 +34,7 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
-                            placeholder="Search a word or category..."
+                            placeholder="{{ search_placeholder }}"
                             data-search-query
                             autocomplete="off"
                         >
@@ -51,14 +51,42 @@
                     </div>
 
                     <div class="translation-card">
-                        <p class="translation-language">{{ result.topic_name }}</p>
-                        <p class="result-english">{{ result.english_word|title }}</p>
+                        <div class="translation-card-head">
+                            <div>
+                                <p class="translation-language">Category</p>
+                                <p class="result-english">{{ result.english_word|title }}</p>
+                            </div>
+
+                            <form class="inline-form inline-form-compact save-word-form" method="post" action="{% url 'search-results' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="toggle_saved_word">
+                                <input type="hidden" name="mode" value="{{ current_mode }}">
+                                <input type="hidden" name="q" value="{{ search_query }}">
+                                <input type="hidden" name="back" value="{{ back_url }}">
+                                <input type="hidden" name="search_type" value="{{ current_search_type }}">
+                                <button class="save-word-button {% if result.is_saved %}is-saved{% endif %}" type="submit">
+                                    <span class="save-word-icon" aria-hidden="true">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3-6 3V5.5a1 1 0 0 1 1-1z"></path>
+                                        </svg>
+                                    </span>
+                                    <span>{% if result.is_saved %}Saved{% else %}Save Word{% endif %}</span>
+                                </button>
+                            </form>
+                        </div>
 
                         {% if result.has_translation %}
                             <p class="translation-language">{{ result.cree_label }}</p>
                             <p class="translation-word">{{ result.cree_translation }}</p>
                         {% else %}
                             <p class="translation-word translation-pending">No translation available</p>
+                        {% endif %}
+
+                        {% if result.is_saved %}
+                            <div class="collection-status-banner">
+                                <strong>Added to Collection</strong>
+                                <span>This word is saved and ready to organize.</span>
+                            </div>
                         {% endif %}
 
                         <div class="related-group" aria-label="Related words">
@@ -72,81 +100,85 @@
                     </div>
                 </section>
 
-                <section class="content-section" aria-labelledby="topic-link-title">
+                <section class="content-section" aria-labelledby="category-link-title">
                     <div class="section-head">
-                        <h2 id="topic-link-title">Browse This Topic</h2>
+                        <h2 id="category-link-title">Browse This Category</h2>
                     </div>
 
                     <p class="mode-intro">Open {{ result.topic_name }} to switch between the word list and the topic map.</p>
                     <a class="topic-card topic-link-card" href="{% url 'topic-detail' result.topic_slug %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}">
-                        View {{ result.topic_name }} Topic
+                        View {{ result.topic_name }} Category
                     </a>
                 </section>
 
-                <section class="content-section" id="mode-tools" aria-labelledby="mode-tools-title">
-                    <div class="section-head">
-                        <h2 id="mode-tools-title">
-                            {% if current_mode == "Standard" %}
-                                Bookmark
-                            {% else %}
-                                Lessons
-                            {% endif %}
-                        </h2>
+                <section class="content-section" id="collection-tools" aria-labelledby="collection-tools-title">
+                    <div class="section-head section-head-split">
+                        <div>
+                            <h2 id="collection-tools-title">Collections</h2>
+                            <p class="mode-intro">{{ saved_word_count }} saved words across {{ collection_count }} collections.</p>
+                        </div>
+                        <a class="recent-link" href="{{ collections_url }}">View Collections</a>
                     </div>
 
-                    {% if current_mode == "Standard" %}
-                        <p class="mode-intro">{{ bookmark_count }} saved words in your bookmark library.</p>
+                    {% if result.is_saved %}
+                        {% if show_collection_prompt %}
+                            <div class="collection-prompt-card">
+                                <strong>Add to Collection?</strong>
+                                <span>Choose a collection below or create a new one for {{ result.english_word|title }}.</span>
+                            </div>
+                        {% endif %}
 
-                        <form class="inline-form" method="post" action="{% url 'search-results' %}">
+                        {% if collections %}
+                            <div class="collection-choice-stack">
+                                {% for collection in collections %}
+                                    <article class="collection-choice-card">
+                                        <div>
+                                            <strong>{{ collection.name }}</strong>
+                                            <span>{{ collection.word_count }} words</span>
+                                        </div>
+
+                                        {% if collection.contains_current %}
+                                            <form class="inline-form inline-form-compact" method="post" action="{% url 'search-results' %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="remove_from_collection">
+                                                <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                                <input type="hidden" name="mode" value="{{ current_mode }}">
+                                                <input type="hidden" name="q" value="{{ search_query }}">
+                                                <input type="hidden" name="back" value="{{ back_url }}">
+                                                <input type="hidden" name="search_type" value="{{ current_search_type }}">
+                                                <button class="action-button action-button-secondary" type="submit">Remove</button>
+                                            </form>
+                                        {% else %}
+                                            <form class="inline-form inline-form-compact" method="post" action="{% url 'search-results' %}">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="action" value="add_to_collection">
+                                                <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                                <input type="hidden" name="mode" value="{{ current_mode }}">
+                                                <input type="hidden" name="q" value="{{ search_query }}">
+                                                <input type="hidden" name="back" value="{{ back_url }}">
+                                                <input type="hidden" name="search_type" value="{{ current_search_type }}">
+                                                <button class="action-button" type="submit">Add</button>
+                                            </form>
+                                        {% endif %}
+                                    </article>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <p class="empty-state">Create your first collection</p>
+                        {% endif %}
+
+                        <form class="inline-form collection-create-inline" method="post" action="{% url 'search-results' %}">
                             {% csrf_token %}
-                            <input type="hidden" name="action" value="toggle_bookmark">
+                            <input type="hidden" name="action" value="create_collection">
                             <input type="hidden" name="mode" value="{{ current_mode }}">
                             <input type="hidden" name="q" value="{{ search_query }}">
                             <input type="hidden" name="back" value="{{ back_url }}">
                             <input type="hidden" name="search_type" value="{{ current_search_type }}">
-                            <button class="action-button" type="submit">
-                                {% if result.is_bookmarked %}
-                                    Remove Bookmark
-                                {% else %}
-                                    Save Bookmark
-                                {% endif %}
-                            </button>
+                            <input class="text-input" type="text" name="collection_name" placeholder="New collection name">
+                            <button class="action-button" type="submit">Create Collection</button>
                         </form>
                     {% else %}
-                        <div class="stack-actions">
-                            <p class="mode-intro">{{ lesson_count }} lessons available. Open the lesson builder to create a new lesson with this word, or add it to one below.</p>
-                            <a class="action-button" href="{{ lessons_url }}">Create New Lesson</a>
-
-                            {% if lessons %}
-                                <div class="lesson-stack">
-                                    {% for lesson in lessons %}
-                                        <article class="lesson-card">
-                                            <div class="lesson-card-top">
-                                                <h3>{{ lesson.name }}</h3>
-                                                <span>{{ lesson.word_count }} words</span>
-                                            </div>
-
-                                            {% if lesson.contains_current %}
-                                                <span class="status-pill">Already added</span>
-                                            {% else %}
-                                                <form class="inline-form inline-form-compact" method="post" action="{% url 'search-results' %}">
-                                                    {% csrf_token %}
-                                                    <input type="hidden" name="action" value="add_to_lesson">
-                                                    <input type="hidden" name="lesson_name" value="{{ lesson.name }}">
-                                                    <input type="hidden" name="mode" value="{{ current_mode }}">
-                                                    <input type="hidden" name="q" value="{{ search_query }}">
-                                                    <input type="hidden" name="back" value="{{ back_url }}">
-                                                    <input type="hidden" name="search_type" value="{{ current_search_type }}">
-                                                    <button class="action-button" type="submit">Add {{ result.english_word|title }}</button>
-                                                </form>
-                                            {% endif %}
-                                        </article>
-                                    {% endfor %}
-                                </div>
-                            {% else %}
-                                <p class="empty-state">No lessons yet. Use Create New Lesson to start organizing words.</p>
-                            {% endif %}
-                        </div>
+                        <p class="empty-state">Save this word to start building collections.</p>
                     {% endif %}
                 </section>
             {% else %}
@@ -170,9 +202,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{% if current_mode == 'Standard' %}{{ bookmarks_url }}{% elif current_mode == 'Teacher' %}{{ lessons_url }}{% else %}{{ research_url }}{% endif %}">
-                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
-            </a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

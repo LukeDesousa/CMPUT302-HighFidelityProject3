@@ -31,7 +31,7 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
-                            placeholder="Search a word or category..."
+                            placeholder="{{ search_placeholder }}"
                             data-search-query
                             autocomplete="off"
                         >
@@ -41,30 +41,99 @@
                 </form>
             </section>
 
+            <section class="content-section home-panel home-topics-panel home-topics-spotlight" id="topics" aria-labelledby="topics-title">
+                <div class="section-head section-head-split">
+                    <div>
+                        <h2 id="topics-title">Explore by Topics</h2>
+                        <p class="mode-intro">Open a category quickly with large cards, then browse the words inside it.</p>
+                    </div>
+                    <a class="recent-link" href="{{ browse_topics_url }}">Browse All</a>
+                </div>
+
+                <div class="topic-grid topic-grid-spotlight">
+                    {% for topic in featured_topics %}
+                        <a class="topic-card topic-card-detail topic-card-spotlight" href="{{ topic.url }}">
+                            <span class="topic-card-icon" aria-hidden="true">
+                                {% if topic.icon == "family" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 18v-4"></path>
+                                        <path d="M17 18v-4"></path>
+                                        <circle cx="7" cy="10" r="2.5"></circle>
+                                        <circle cx="17" cy="10" r="2.5"></circle>
+                                        <path d="M4.5 18c.6-2 1.8-3 2.5-3s1.9 1 2.5 3"></path>
+                                        <path d="M14.5 18c.6-2 1.8-3 2.5-3s1.9 1 2.5 3"></path>
+                                    </svg>
+                                {% elif topic.icon == "sports" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="7"></circle>
+                                        <path d="M7 8l3 2"></path>
+                                        <path d="M17 8l-3 2"></path>
+                                        <path d="M9 16h6"></path>
+                                    </svg>
+                                {% elif topic.icon == "seasons" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="4"></circle>
+                                        <path d="M12 3v3"></path>
+                                        <path d="M12 18v3"></path>
+                                        <path d="M3 12h3"></path>
+                                        <path d="M18 12h3"></path>
+                                    </svg>
+                                {% elif topic.icon == "nouns" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 5h12v14H6z"></path>
+                                        <path d="M9 9h6"></path>
+                                        <path d="M9 13h4"></path>
+                                    </svg>
+                                {% elif topic.icon == "verbs" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 17L17 7"></path>
+                                        <path d="M9 7h8v8"></path>
+                                    </svg>
+                                {% elif topic.icon == "fruits" %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 7c3.9 0 6.5 2.6 6.5 6.3 0 3.2-2.5 5.7-6.5 5.7s-6.5-2.5-6.5-5.7C5.5 9.6 8.1 7 12 7z"></path>
+                                        <path d="M12 7c0-1.8 1.5-3 3.8-3"></path>
+                                        <path d="M10 5c.9 1.4 2.1 2 4 2"></path>
+                                    </svg>
+                                {% else %}
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M6 15c0-3.6 2.7-6 6-6s6 2.4 6 6"></path>
+                                        <path d="M8 17h8"></path>
+                                        <circle cx="8.5" cy="10.5" r="1.5"></circle>
+                                        <circle cx="15.5" cy="10.5" r="1.5"></circle>
+                                    </svg>
+                                {% endif %}
+                            </span>
+                            <strong>{{ topic.name }}</strong>
+                            <span>{{ topic.word_count }} words</span>
+                        </a>
+                    {% endfor %}
+                </div>
+
+                <p class="graph-hint">Home highlights 6 topic cards. Browse Topics opens the full {{ all_topic_count }}-topic prototype library.</p>
+            </section>
+
             <div class="home-dashboard-grid">
                 <section class="content-section home-panel home-feature-panel" id="mode-hub" aria-labelledby="mode-hub-title">
                     <div class="section-head">
                         <h2 id="mode-hub-title">
                             {% if current_mode == "Research" %}
                                 Research Mode
-                            {% elif current_mode == "Standard" %}
-                                Bookmark Library
                             {% else %}
-                                Lesson Builder
+                                Explore Mode
                             {% endif %}
                         </h2>
                     </div>
 
                     <div class="overview-card">
                         {% if current_mode == "Research" %}
-                            <p class="mode-intro">Search a word or open a topic to switch between list and map views.</p>
-                            <p class="overview-metric"><strong>2 views</strong><span>Topic words can now be browsed as a list or a map.</span></p>
-                        {% elif current_mode == "Standard" %}
-                            <p class="mode-intro">{{ bookmark_count }} saved words ready to review from the bottom bar.</p>
-                            <p class="overview-metric"><strong>{{ bookmark_count }}</strong><span>Bookmarks saved in this session.</span></p>
+                            <p class="mode-intro">Open a word to inspect its related nodes, similarity scores, and connected category map.</p>
+                            <p class="overview-metric"><strong>Mock cosine graph</strong><span>Related words move closer when their similarity score is higher.</span></p>
                         {% else %}
-                            <p class="mode-intro">{{ lesson_count }} lessons created so far. Use the bottom bar to manage them.</p>
-                            <p class="overview-metric"><strong>{{ lesson_count }}</strong><span>Lesson sets ready for editing.</span></p>
+                            <p class="mode-intro">{{ saved_word_count }} saved words across {{ collection_count }} collections.</p>
+                            <p class="overview-metric"><strong>{{ saved_word_count }}</strong><span>Saved words ready to organize.</span></p>
+                            <p class="overview-metric"><strong>{{ collection_count }}</strong><span>Collections available in this session.</span></p>
+                            <a class="action-button action-button-secondary" href="{{ collections_url }}">Open Collections</a>
                         {% endif %}
                     </div>
                 </section>
@@ -81,34 +150,14 @@
                             {% endfor %}
                         </ul>
                     {% else %}
-                        <p class="empty-state">No recent searches yet. Your latest looked-up words will appear here.</p>
+                        <p class="empty-state">Start exploring vocabulary</p>
                     {% endif %}
                 </section>
             </div>
-
-            <section class="content-section home-panel home-topics-panel" id="topics" aria-labelledby="topics-title">
-                <div class="section-head section-head-split">
-                    <h2 id="topics-title">Explore by Topics</h2>
-                    <a class="recent-link" href="{{ browse_topics_url }}">Browse All</a>
-                </div>
-
-                <p class="graph-hint">Home shows 6 featured topics. Browse Topics opens the full {{ all_topic_count }}-topic library.</p>
-
-                <div class="topic-grid">
-                    {% for topic in featured_topics %}
-                        <a class="topic-card topic-card-detail" href="{{ topic.url }}">
-                            <strong>{{ topic.name }}</strong>
-                            <span>{{ topic.word_count }} words</span>
-                        </a>
-                    {% endfor %}
-                </div>
-            </section>
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{% if current_mode == 'Standard' %}{{ bookmarks_url }}{% elif current_mode == 'Teacher' %}{{ lessons_url }}{% else %}{{ research_sample_url }}{% endif %}">
-                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
-            </a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}" aria-current="page">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

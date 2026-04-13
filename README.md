@@ -31,9 +31,9 @@ python manage.py migrate
 python manage.py runserver
 ```
 
-Open `http://127.0.0.1:8000/` for the app and `http://127.0.0.1:8000/admin/` for the admin site.
+Open `http://127.0.0.1:8000/` for the app
 
-## Quick TA checklist
+## Quick checklist
 
 1. Clone the repo.
 2. `cd` into the cloned project folder.

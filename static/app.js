@@ -131,35 +131,8 @@
         });
     };
 
-    const setupModeMenus = () => {
-        const modeMenus = document.querySelectorAll("[data-mode-menu]");
-
-        if (modeMenus.length === 0) {
-            return;
-        }
-
-        document.addEventListener("click", (event) => {
-            modeMenus.forEach((menu) => {
-                if (!menu.contains(event.target)) {
-                    menu.removeAttribute("open");
-                }
-            });
-        });
-
-        document.addEventListener("keydown", (event) => {
-            if (event.key !== "Escape") {
-                return;
-            }
-
-            modeMenus.forEach((menu) => {
-                menu.removeAttribute("open");
-            });
-        });
-    };
-
     document.addEventListener("DOMContentLoaded", () => {
         setupToast();
         setupSearchForms();
-        setupModeMenus();
     });
 })();

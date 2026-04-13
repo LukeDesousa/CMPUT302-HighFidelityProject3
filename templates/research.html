@@ -39,7 +39,7 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
-                            placeholder="Search a word or category..."
+                            placeholder="{{ search_placeholder }}"
                             data-search-query
                             autocomplete="off"
                         >
@@ -57,7 +57,7 @@
 
                     <div class="translation-card research-summary">
                         <div>
-                            <p class="translation-language">{{ result.topic_name }}</p>
+                            <p class="translation-language">Category</p>
                             <p class="result-english">{{ result.english_word|title }}</p>
                         </div>
 
@@ -106,7 +106,7 @@
                     <div class="section-head section-head-split">
                         <div>
                             <h2 id="graph-workspace-title">Explore Connections</h2>
-                            <p class="graph-hint">Drag to move. Pinch, scroll, or use the controls to zoom.</p>
+                            <p class="graph-hint">Drag nodes to explore connections. Pinch, scroll, or use the controls to zoom.</p>
                         </div>
 
                         <div class="graph-toolbar" aria-label="Graph controls">
@@ -117,6 +117,8 @@
                     </div>
 
                     <div class="graph-workspace" data-graph-workspace data-graph-initial-scale="0.84">
+                        <div class="graph-instruction-overlay">Drag nodes to explore connections</div>
+
                         <div class="graph-status">
                             <span data-graph-zoom-value>100%</span>
                         </div>
@@ -130,7 +132,11 @@
                                 </svg>
 
                                 {% for node in research_graph.nodes %}
-                                    <div class="graph-node graph-node-{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                    <div
+                                        class="graph-node graph-node-{{ node.kind }}{% if node.draggable %} graph-node-draggable{% endif %}"
+                                        style="left: {{ node.x }}%; top: {{ node.y }}%;"
+                                        {% if node.draggable %}data-graph-node data-graph-line-index="{{ forloop.counter0|add:'-1' }}"{% endif %}
+                                    >
                                         <strong>{{ node.label }}</strong>
                                         <span>{{ node.meta }}</span>
                                     </div>
@@ -149,7 +155,7 @@
                         {% for item in result.related_words %}
                             <a class="related-chip" href="{% url 'research' %}?q={{ item.english|urlencode }}&mode=Research&back={{ current_page_url|urlencode }}">
                                 {{ item.english|title }}
-                                <small>{% if item.cree %}{{ item.cree }}{% else %}Open graph{% endif %}</small>
+                                <small>Similarity {{ item.similarity_label }}</small>
                             </a>
                         {% endfor %}
                     </div>

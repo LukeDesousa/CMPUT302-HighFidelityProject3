@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Collections | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        {% include "includes/top_nav.html" with title="Collections" show_back=True %}
+
+        <main class="screen-content collections-screen">
+            <section class="content-section" aria-labelledby="saved-words-title">
+                <div class="section-head section-head-split">
+                    <div>
+                        <h1 id="saved-words-title" class="result-title">Saved Words</h1>
+                        <p class="mode-intro">{{ saved_word_count }} saved words across {{ collection_count }} collections.</p>
+                    </div>
+                    {% if selected_result %}
+                        <span class="status-pill">Selected: {{ selected_result.english_word|title }}</span>
+                    {% endif %}
+                </div>
+
+                {% if saved_words %}
+                    <div class="saved-grid">
+                        {% for saved_word in saved_words %}
+                            <article class="saved-card">
+                                <a class="saved-card-link" href="{% url search_route_name %}?q={{ saved_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                    <strong>{{ saved_word.english_word|title }}</strong>
+                                    <span>{% if saved_word.cree_translation %}{{ saved_word.cree_translation }}{% else %}View word{% endif %}</span>
+                                </a>
+
+                                <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="remove_saved_word">
+                                    <input type="hidden" name="word" value="{{ saved_word.english_word }}">
+                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                    <button class="action-button action-button-secondary" type="submit">Remove</button>
+                                </form>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Start exploring vocabulary</p>
+                {% endif %}
+            </section>
+
+            <section class="content-section" aria-labelledby="collection-builder-title">
+                <div class="section-head">
+                    <h2 id="collection-builder-title">Create Collection</h2>
+                </div>
+
+                <p class="mode-intro">Create a collection, add an optional note, and attach a selected word if you have one open.</p>
+
+                <form id="collection-builder-form" class="collection-builder-form" method="post" action="{% url 'collections' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_collection">
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    {% if selected_word %}
+                        <input type="hidden" name="word" value="{{ selected_word }}">
+                    {% endif %}
+                </form>
+
+                <div class="collection-builder-shell">
+                    <div class="builder-field">
+                        <label class="field-label" for="collection-name">Collection Name</label>
+                        <input
+                            id="collection-name"
+                            class="text-input"
+                            type="text"
+                            name="collection_name"
+                            placeholder="New collection name"
+                            form="collection-builder-form"
+                            required
+                        >
+                    </div>
+
+                    <div class="builder-field collection-word-builder">
+                        <label class="field-label" for="collection-word-search">Word</label>
+                        <form
+                            class="search-form search-form-stack search-form-mini collection-word-search"
+                            action="{% url 'collections' %}"
+                            method="get"
+                            role="search"
+                            data-search-form
+                        >
+                            <input type="hidden" name="mode" value="{{ current_mode }}">
+                            <input type="hidden" name="back" value="{{ back_url }}">
+                            <label class="sr-only" for="collection-word-search">Search for words</label>
+                            <div class="search-field search-field-mini">
+                                <span class="search-icon" aria-hidden="true">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="11" cy="11" r="6.5"></circle>
+                                        <path d="M16 16l5 5"></path>
+                                    </svg>
+                                </span>
+                                <input
+                                    id="collection-word-search"
+                                    name="word"
+                                    type="search"
+                                    value="{{ selected_word|default:'' }}"
+                                    placeholder="{{ search_placeholder }}"
+                                    data-search-query
+                                    autocomplete="off"
+                                >
+                            </div>
+                            <div class="search-suggestions" data-search-suggestions hidden></div>
+                            <script type="application/json" data-search-suggestions-source>{{ collection_word_suggestions_json|safe }}</script>
+                        </form>
+
+                        {% if selected_result %}
+                            <div class="translation-card collection-word-preview">
+                                <p class="translation-language">Category</p>
+                                <p class="result-english">{{ selected_result.english_word|title }}</p>
+                                {% if selected_result.has_translation %}
+                                    <p class="translation-language">{{ selected_result.cree_label }}</p>
+                                    <p class="translation-word">{{ selected_result.cree_translation }}</p>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="builder-empty">
+                                <p class="empty-state">Search for a word to add it while creating a collection.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="builder-field">
+                        <label class="field-label" for="collection-notes">Notes</label>
+                        <textarea
+                            id="collection-notes"
+                            class="text-area"
+                            name="collection_notes"
+                            rows="4"
+                            placeholder="Add collection notes or reminders..."
+                            form="collection-builder-form"
+                        ></textarea>
+                    </div>
+
+                    <button class="action-button collection-save-button" type="submit" form="collection-builder-form">Create Collection</button>
+                </div>
+            </section>
+
+            <section class="content-section" aria-labelledby="saved-collections-title">
+                <div class="section-head">
+                    <h2 id="saved-collections-title">Your Collections</h2>
+                </div>
+
+                {% if collections %}
+                    <div class="collection-stack">
+                        {% for collection in collections %}
+                            <article class="collection-card">
+                                <div class="collection-card-top">
+                                    <div>
+                                        <h3>{{ collection.name }}</h3>
+                                        <span>{{ collection.word_count }} words</span>
+                                    </div>
+                                    {% if collection.contains_current %}
+                                        <span class="status-pill">Contains {{ selected_result.english_word|title }}</span>
+                                    {% endif %}
+                                </div>
+
+                                <form class="collection-edit-form" method="post" action="{% url 'collections' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="save_collection">
+                                    <input type="hidden" name="current_name" value="{{ collection.name }}">
+                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                    {% if selected_word %}
+                                        <input type="hidden" name="word" value="{{ selected_word }}">
+                                    {% endif %}
+                                    <label class="sr-only" for="collection-name-{{ forloop.counter }}">Collection name</label>
+                                    <input id="collection-name-{{ forloop.counter }}" class="text-input" type="text" name="collection_name" value="{{ collection.name }}">
+                                    <label class="sr-only" for="collection-notes-{{ forloop.counter }}">Collection notes</label>
+                                    <textarea id="collection-notes-{{ forloop.counter }}" class="text-area text-area-compact" name="collection_notes" rows="3">{{ collection.notes }}</textarea>
+                                    <button class="action-button action-button-secondary" type="submit">Save Changes</button>
+                                </form>
+
+                                {% if collection.words %}
+                                    <div class="collection-word-list">
+                                        {% for collection_word in collection.words %}
+                                            <div class="collection-word-entry">
+                                                <a class="related-chip" href="{% url search_route_name %}?q={{ collection_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
+                                                    {{ collection_word.english_word|title }}
+                                                    <small>{% if collection_word.cree_translation %}{{ collection_word.cree_translation }}{% else %}View word{% endif %}</small>
+                                                </a>
+                                                <form class="chip-remove-form" method="post" action="{% url 'collections' %}">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="action" value="remove_from_collection">
+                                                    <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                                    <input type="hidden" name="word" value="{{ collection_word.english_word }}">
+                                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                                    <button class="chip-remove-button" type="submit">Remove</button>
+                                                </form>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <p class="mini-empty">No words in this collection yet.</p>
+                                {% endif %}
+
+                                <div class="collection-card-actions">
+                                    {% if selected_result and not collection.contains_current %}
+                                        <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="add_to_collection">
+                                            <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                            <input type="hidden" name="mode" value="{{ current_mode }}">
+                                            <input type="hidden" name="word" value="{{ selected_word }}">
+                                            <input type="hidden" name="back" value="{{ back_url }}">
+                                            <button class="action-button" type="submit">Add {{ selected_result.english_word|title }}</button>
+                                        </form>
+                                    {% endif %}
+
+                                    <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_collection">
+                                        <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                        <input type="hidden" name="mode" value="{{ current_mode }}">
+                                        <input type="hidden" name="back" value="{{ back_url }}">
+                                        {% if selected_word %}
+                                            <input type="hidden" name="word" value="{{ selected_word }}">
+                                        {% endif %}
+                                        <button class="action-button action-button-danger" type="submit">Delete Collection</button>
+                                    </form>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Create your first collection</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Collections</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

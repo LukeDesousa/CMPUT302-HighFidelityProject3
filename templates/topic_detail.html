@@ -24,7 +24,7 @@
                 <section class="content-section detail-section" aria-labelledby="topic-title">
                     <div class="section-head section-head-split">
                         <div>
-                            <p class="field-label detail-label">Topic</p>
+                            <p class="field-label detail-label">Category</p>
                             <h1 id="topic-title" class="detail-title">{{ topic.name }}</h1>
                         </div>
 
@@ -35,7 +35,7 @@
                     </div>
 
                     <p class="topic-summary">{{ topic.summary }}</p>
-                    <p class="graph-hint">{{ topic_words|length }} words in this topic. Switch between the list and map view any time.</p>
+                    <p class="graph-hint">{{ topic_words|length }} words in this category. Switch between the list and map view any time.</p>
 
                     {% if topic_view == "map" %}
                         <div class="graph-workspace" data-graph-workspace data-graph-initial-scale="0.88">
@@ -86,9 +86,9 @@
                 </section>
             {% else %}
                 <section class="content-section detail-section" aria-labelledby="topic-title">
-                    <p class="field-label detail-label">Topic Preview</p>
+                    <p class="field-label detail-label">Category Preview</p>
                     <h1 id="topic-title" class="detail-title">{{ topic_label }}</h1>
-                    <p class="empty-state">This is a placeholder route for now. You can connect lessons or word lists here later.</p>
+                    <p class="empty-state">This is a placeholder route for now. You can connect more category content here later.</p>
                 </section>
             {% endif %}
         </main>
@@ -103,9 +103,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% if current_mode == 'Standard' %}{% url 'bookmarks' %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}{% elif current_mode == 'Teacher' %}{% url 'lessons' %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}{% else %}{{ research_sample_url }}{% endif %}">
-                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
-            </a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
         </nav>
     </div>
 {% endblock %}

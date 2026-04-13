@@ -34,7 +34,7 @@
                             name="q"
                             type="search"
                             value="{{ search_query }}"
-                            placeholder="Search a word or category..."
+                            placeholder="{{ search_placeholder }}"
                             data-search-query
                             autocomplete="off"
                         >
@@ -50,16 +50,16 @@
                 </div>
 
                 {% if has_topic_filter %}
-                    <p class="mode-intro">Showing {{ filtered_topic_count }} topic matches for "{{ search_query }}". Browse all {{ topic_count }} prototype topics by clearing the search.</p>
+                    <p class="mode-intro">Showing {{ filtered_topic_count }} category matches for "{{ search_query }}". Browse all {{ topic_count }} prototype topics by clearing the search.</p>
                 {% else %}
-                    <p class="mode-intro">Home shows 6 featured topics. This page shows all {{ topic_count }} topics in the prototype database.</p>
+                    <p class="mode-intro">Home highlights 6 topic cards. This page shows all {{ topic_count }} topics in the prototype library.</p>
                 {% endif %}
 
                 {% if topics %}
                     <div class="saved-grid">
                         {% for topic in topics %}
                             <a class="browse-topic-card" href="{{ topic.url }}">
-                                <p class="translation-language">Topic</p>
+                                <p class="translation-language">Category</p>
                                 <strong>{{ topic.name }}</strong>
                                 <span>{{ topic.summary }}</span>
                                 <p class="card-meta">{{ topic.word_count }} words - {{ topic.preview_words|join:", " }}</p>
@@ -82,9 +82,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{% if current_mode == 'Standard' %}{{ bookmarks_url }}{% elif current_mode == 'Teacher' %}{{ lessons_url }}{% else %}{{ research_sample_url }}{% endif %}">
-                {% if current_mode == "Research" %}Research{% elif current_mode == "Standard" %}Bookmarks{% else %}Lessons{% endif %}
-            </a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
         </nav>
     </div>
 {% endblock %}

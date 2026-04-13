@@ -3,19 +3,15 @@ from django.urls import reverse
 
 
 class HomePageTests(TestCase):
-    def test_home_page_renders_topic_preview(self):
+    def test_home_page_renders_topics_and_mode_toggle(self):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Recent Searches")
         self.assertContains(response, "Explore by Topics")
-        self.assertContains(response, "Search a word or category...")
-        self.assertContains(response, 'data-mode-menu', html=False)
-        self.assertContains(response, 'data-search-suggestions-source', html=False)
-        self.assertContains(response, "Build lessons, add notes, and collect words for class use.")
-        self.assertContains(response, "Inspect a word through connected meanings and topic maps.")
-        self.assertNotContains(response, "Search By")
-        self.assertContains(response, "Browse All")
+        self.assertContains(response, "Search words or categories")
+        self.assertContains(response, "Explore")
+        self.assertContains(response, "Research")
+        self.assertContains(response, 'class="mode-toggle"', html=False)
 
         for slug, label in (
             ("family", "Family"),
@@ -28,7 +24,7 @@ class HomePageTests(TestCase):
             self.assertContains(response, label)
             self.assertContains(response, reverse("topic-detail", args=[slug]))
 
-        self.assertContains(response, 'class="topic-card topic-card-detail"', count=6, html=False)
+        self.assertContains(response, 'class="topic-card topic-card-detail topic-card-spotlight"', count=6, html=False)
 
     def test_browse_topics_page_renders_all_topics(self):
         response = self.client.get(reverse("browse-topics"))
@@ -38,7 +34,7 @@ class HomePageTests(TestCase):
         self.assertContains(response, "Animals")
         self.assertContains(response, reverse("topic-detail", args=["animals"]))
 
-    def test_research_mode_has_dedicated_graph_page(self):
+    def test_research_mode_has_similarity_graph(self):
         redirect_response = self.client.get(
             reverse("search-results"),
             {"q": "horse", "mode": "Research"},
@@ -57,27 +53,46 @@ class HomePageTests(TestCase):
         self.assertContains(response, "mistatim")
         self.assertContains(response, "ᒥᐢᑕᑎᒼ")
         self.assertContains(response, "Word Class")
-        self.assertContains(response, "Drag to move")
-        self.assertContains(response, "Zoom In")
+        self.assertContains(response, "Drag nodes to explore connections")
+        self.assertContains(response, "Similarity")
         self.assertContains(response, 'data-graph-workspace', html=False)
+        self.assertContains(response, 'data-graph-node', html=False)
+
+    def test_added_words_render_fuller_prototype_data(self):
+        response = self.client.get(
+            reverse("search-results"),
+            {"q": "school", "mode": "Explore"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "kiskinwahamâtowikamik")
+
+        research_response = self.client.get(
+            reverse("research"),
+            {"q": "school", "mode": "Research"},
+        )
+
+        self.assertEqual(research_response.status_code, 200)
+        self.assertContains(research_response, "Word Class")
+        self.assertContains(research_response, "Prototype vocabulary set")
 
     def test_category_search_filters_topic_results(self):
         response = self.client.get(
             reverse("browse-topics"),
-            {"mode": "Teacher", "search_type": "category", "q": "ani"},
+            {"mode": "Explore", "search_type": "category", "q": "ani"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Search a word or category...")
+        self.assertContains(response, "Search words or categories")
         self.assertContains(response, "Animals")
         self.assertContains(response, 'class="browse-topic-card"', count=1, html=False)
 
-    def test_standard_mode_can_toggle_bookmark(self):
+    def test_explore_mode_can_save_word_and_prompt_for_collection(self):
         response = self.client.post(
             reverse("search-results"),
             {
-                "action": "toggle_bookmark",
-                "mode": "Standard",
+                "action": "toggle_saved_word",
+                "mode": "Explore",
                 "q": "rabbit",
                 "back": reverse("home"),
                 "search_type": "word",
@@ -86,63 +101,75 @@ class HomePageTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Remove Bookmark")
-        self.assertContains(response, "Word saved to your list")
-        self.assertIn("rabbit", self.client.session["bookmarks"])
+        self.assertContains(response, "Added to Collection")
+        self.assertContains(response, "Add to Collection?")
+        self.assertIn("rabbit", self.client.session["saved_words"])
 
-    def test_bookmarks_page_renders_saved_words(self):
+    def test_collections_page_renders_saved_words_and_collections(self):
         session = self.client.session
-        session["bookmarks"] = ["horse", "rabbit"]
+        session["saved_words"] = ["horse", "rabbit"]
+        session["collections"] = [{"name": "Animals", "words": ["horse"], "notes": "Warm-up"}]
         session.save()
 
-        response = self.client.get(reverse("bookmarks"), {"mode": "Standard"})
+        response = self.client.get(reverse("collections"), {"mode": "Explore"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Bookmarks")
+        self.assertContains(response, "Saved Words")
         self.assertContains(response, "Horse")
         self.assertContains(response, "Rabbit")
+        self.assertContains(response, "Animals")
+        self.assertContains(response, "Warm-up")
 
-    def test_teacher_mode_can_create_lesson_and_add_word(self):
-        self.client.post(
-            reverse("lessons"),
+    def test_collections_page_can_create_and_rename_collection(self):
+        create_response = self.client.post(
+            reverse("collections"),
             {
-                "action": "create_lesson",
-                "mode": "Teacher",
+                "action": "create_collection",
+                "mode": "Explore",
                 "word": "horse",
-                "lesson_name": "Animal Basics",
-                "lesson_notes": "Warm-up vocabulary",
+                "collection_name": "Animal Basics",
+                "collection_notes": "Warm-up vocabulary",
                 "back": reverse("home"),
             },
             follow=True,
         )
 
-        response = self.client.post(
-            reverse("lessons"),
+        self.assertEqual(create_response.status_code, 200)
+        self.assertContains(create_response, "Animal Basics")
+        self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
+        self.assertEqual(self.client.session["collections"][0]["notes"], "Warm-up vocabulary")
+
+        rename_response = self.client.post(
+            reverse("collections"),
             {
-                "action": "add_to_lesson",
-                "mode": "Teacher",
+                "action": "save_collection",
+                "mode": "Explore",
+                "current_name": "Animal Basics",
+                "collection_name": "Animal Set",
+                "collection_notes": "Updated notes",
                 "word": "horse",
-                "lesson_name": "Animal Basics",
                 "back": reverse("home"),
             },
             follow=True,
         )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Animal Basics")
-        self.assertContains(response, "Already added")
-        self.assertContains(response, "Warm-up vocabulary")
-        self.assertEqual(self.client.session["lessons"][0]["words"], ["horse"])
-        self.assertEqual(self.client.session["lessons"][0]["notes"], "Warm-up vocabulary")
+        self.assertEqual(rename_response.status_code, 200)
+        self.assertContains(rename_response, "Animal Set")
+        self.assertEqual(self.client.session["collections"][0]["name"], "Animal Set")
+        self.assertEqual(self.client.session["collections"][0]["notes"], "Updated notes")
 
-    def test_teacher_search_result_can_create_lesson_with_current_word(self):
+    def test_search_result_can_add_word_to_existing_collection(self):
+        session = self.client.session
+        session["collections"] = [{"name": "Animals", "words": [], "notes": ""}]
+        session.save()
+
         response = self.client.post(
             reverse("search-results"),
             {
-                "action": "create_lesson",
-                "mode": "Teacher",
+                "action": "add_to_collection",
+                "mode": "Explore",
                 "q": "horse",
-                "lesson_name": "Map Lesson",
+                "collection_name": "Animals",
                 "back": reverse("home"),
                 "search_type": "word",
             },
@@ -150,97 +177,47 @@ class HomePageTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Map Lesson")
-        self.assertContains(response, "Already added")
-        self.assertEqual(self.client.session["lessons"][0]["words"], ["horse"])
+        self.assertContains(response, ">Remove<", html=False)
+        self.assertIn("horse", self.client.session["saved_words"])
+        self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
 
-    def test_lessons_page_renders_separately(self):
-        response = self.client.get(
-            reverse("lessons"),
-            {"mode": "Teacher", "word": "horse"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Create New Lesson")
-        self.assertContains(response, "Save Lesson")
-        self.assertContains(response, "Find a word to add...")
-        self.assertContains(response, "Horse")
-
-    def test_teacher_search_result_links_to_dedicated_lesson_builder(self):
-        response = self.client.get(
-            reverse("search-results"),
-            {"q": "horse", "mode": "Teacher"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Create New Lesson")
-        self.assertContains(response, reverse("lessons"))
-
-    def test_subpage_mode_switcher_is_in_nav_and_links_home(self):
-        response = self.client.get(
-            reverse("search-results"),
-            {"q": "horse", "mode": "Teacher"},
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'data-mode-menu', html=False)
-        self.assertContains(response, '/?mode=Teacher&search_type=word')
-        self.assertContains(response, "Save useful words to a quick review list for later.")
-
-    def test_lesson_export_shows_toast(self):
+    def test_remove_saved_word_also_removes_collection_membership(self):
         session = self.client.session
-        session["lessons"] = [{"name": "Animal Basics", "words": ["horse"], "notes": ""}]
+        session["saved_words"] = ["horse"]
+        session["collections"] = [{"name": "Animals", "words": ["horse"], "notes": ""}]
         session.save()
 
         response = self.client.post(
-            reverse("lessons"),
+            reverse("collections"),
             {
-                "action": "export_lesson",
-                "mode": "Teacher",
-                "lesson_name": "Animal Basics",
+                "action": "remove_saved_word",
+                "mode": "Explore",
+                "word": "horse",
                 "back": reverse("home"),
             },
             follow=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "PDF Export started")
+        self.assertContains(response, "Removed from Collection")
+        self.assertEqual(self.client.session["saved_words"], [])
+        self.assertEqual(self.client.session["collections"][0]["words"], [])
 
-    def test_lesson_can_be_deleted(self):
-        session = self.client.session
-        session["lessons"] = [{"name": "Animal Basics", "words": ["horse"], "notes": ""}]
-        session.save()
-
-        response = self.client.post(
-            reverse("lessons"),
-            {
-                "action": "delete_lesson",
-                "mode": "Teacher",
-                "lesson_name": "Animal Basics",
-                "back": reverse("home"),
-            },
-            follow=True,
-        )
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Lesson deleted")
-        self.assertEqual(self.client.session["lessons"], [])
-
-    def test_topic_page_preserves_mode_search_links(self):
+    def test_topic_page_preserves_mode_links_and_collections_nav(self):
         response = self.client.get(
             reverse("topic-detail", args=["animals"]),
-            {"mode": "Standard"},
+            {"mode": "Explore"},
         )
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Animals")
-        self.assertContains(response, "mode=Standard")
-        self.assertContains(response, "Bookmarks")
+        self.assertContains(response, "mode=Explore")
+        self.assertContains(response, "Collections")
 
     def test_topic_page_supports_map_view_in_all_modes(self):
         response = self.client.get(
             reverse("topic-detail", args=["animals"]),
-            {"mode": "Standard", "view": "map"},
+            {"mode": "Research", "view": "map"},
         )
 
         self.assertEqual(response.status_code, 200)

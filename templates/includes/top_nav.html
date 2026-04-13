@@ -11,22 +11,11 @@
         <span class="page-nav-title">{{ title }}</span>
     </div>
 
-    <details class="mode-menu" data-mode-menu>
-        <summary class="mode-menu-toggle">
-            <span class="sr-only">Change Mode</span>
-            <strong>{{ current_mode }}</strong>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M7 10l5 5 5-5"></path>
-            </svg>
-        </summary>
-
-        <div class="mode-menu-panel">
-            {% for mode_option in mode_options %}
-                <a class="mode-menu-option {% if mode_option.is_current %}is-current{% endif %}" href="{% url 'home' %}?mode={{ mode_option.value|urlencode }}&search_type={{ current_search_type|urlencode }}">
-                    <strong>{{ mode_option.value }}</strong>
-                    <span>{{ mode_option.description }}</span>
-                </a>
-            {% endfor %}
-        </div>
-    </details>
+    <div class="mode-toggle" aria-label="Mode switch">
+        {% for mode_option in mode_options %}
+            <a class="mode-toggle-link {% if mode_option.is_current %}is-current{% endif %}" href="{{ mode_option.url }}">
+                {{ mode_option.value }}
+            </a>
+        {% endfor %}
+    </div>
 </nav>

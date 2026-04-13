@@ -16,6 +16,7 @@
     workspaces.forEach((workspace) => {
         const viewport = workspace.querySelector("[data-graph-viewport]");
         const stage = workspace.querySelector("[data-graph-stage]");
+        const graphLines = stage?.querySelectorAll(".graph-lines line") ?? [];
         const zoomValue = workspace.querySelector("[data-graph-zoom-value]");
         const zoomInButton = workspace.querySelector("[data-graph-zoom-in]");
         const zoomOutButton = workspace.querySelector("[data-graph-zoom-out]");
@@ -37,6 +38,7 @@
             pointers: new Map(),
             drag: null,
             pinch: null,
+            nodeDrag: null,
         };
 
         const clampPan = () => {
@@ -92,6 +94,10 @@
             state.pointers.delete(pointerId);
             viewport.classList.toggle("is-dragging", false);
 
+            if (state.nodeDrag && state.nodeDrag.pointerId === pointerId) {
+                state.nodeDrag = null;
+            }
+
             if (state.pointers.size === 1) {
                 const [[activePointerId, point]] = state.pointers.entries();
                 state.drag = {
@@ -116,9 +122,28 @@
         }, {passive: false});
 
         viewport.addEventListener("pointerdown", (event) => {
+            const draggableNode = event.target.closest("[data-graph-node]");
+
             viewport.focus({preventScroll: true});
             viewport.setPointerCapture(event.pointerId);
             updatePointer(event);
+
+            if (draggableNode && stage.contains(draggableNode)) {
+                event.preventDefault();
+                state.drag = null;
+                state.pinch = null;
+                state.nodeDrag = {
+                    pointerId: event.pointerId,
+                    node: draggableNode,
+                    line: graphLines[Number.parseInt(draggableNode.dataset.graphLineIndex || "-1", 10)] || null,
+                    clientX: event.clientX,
+                    clientY: event.clientY,
+                    left: Number.parseFloat(draggableNode.style.left || "50"),
+                    top: Number.parseFloat(draggableNode.style.top || "50"),
+                };
+                viewport.classList.add("is-dragging");
+                return;
+            }
 
             if (state.pointers.size === 1) {
                 state.drag = {
@@ -148,6 +173,24 @@
             }
 
             updatePointer(event);
+
+            if (state.nodeDrag && state.nodeDrag.pointerId === event.pointerId) {
+                const scaledWidth = Math.max(stage.offsetWidth * state.scale, 1);
+                const scaledHeight = Math.max(stage.offsetHeight * state.scale, 1);
+                const deltaX = ((event.clientX - state.nodeDrag.clientX) / scaledWidth) * 100;
+                const deltaY = ((event.clientY - state.nodeDrag.clientY) / scaledHeight) * 100;
+                const nextLeft = clamp(state.nodeDrag.left + deltaX, 10, 90);
+                const nextTop = clamp(state.nodeDrag.top + deltaY, 14, 90);
+
+                state.nodeDrag.node.style.left = `${nextLeft}%`;
+                state.nodeDrag.node.style.top = `${nextTop}%`;
+
+                if (state.nodeDrag.line) {
+                    state.nodeDrag.line.setAttribute("x2", nextLeft);
+                    state.nodeDrag.line.setAttribute("y2", nextTop);
+                }
+                return;
+            }
 
             if (state.pointers.size === 2 && state.pinch) {
                 const [pointA, pointB] = [...state.pointers.values()];
