@@ -92,7 +92,7 @@
                         {% for item in result.related_words %}
                             <a class="related-chip" href="{% url 'search-results' %}?q={{ item.english|urlencode }}&mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}">
                                 {{ item.english|title }}
-                                <small>Similarity {{ item.similarity_label }}</small>
+                                <small>{% if item.cree %}{{ item.cree }}{% else %}View word{% endif %}</small>
                             </a>
                         {% endfor %}
                     </div>
