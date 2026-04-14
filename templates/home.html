@@ -41,10 +41,26 @@
                 </form>
             </section>
 
+            <section class="content-section home-panel home-recent-panel home-recent-inline" aria-labelledby="recent-searches-title">
+                <div class="section-head">
+                    <h2 id="recent-searches-title">Recent Searches</h2>
+                </div>
+
+                {% if recent_searches %}
+                    <ul class="recent-list">
+                        {% for search in recent_searches %}
+                            <li><a class="recent-link" href="{% url search_route_name %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="empty-state">Your recent searches will show up here.</p>
+                {% endif %}
+            </section>
+
             <section class="content-section home-panel home-topics-panel home-topics-spotlight" id="topics" aria-labelledby="topics-title">
                 <div class="section-head section-head-split">
                     <div>
-                        <h2 id="topics-title">Explore by Topics</h2>
+                        <h2 id="topics-title">Explore by Categories</h2>
                         <p class="mode-intro">Open a category quickly with large cards, then browse the words inside it.</p>
                     </div>
                     <a class="recent-link" href="{{ browse_topics_url }}">Browse All</a>
@@ -110,7 +126,7 @@
                     {% endfor %}
                 </div>
 
-                <p class="graph-hint">Home highlights 6 topic cards. Browse Topics opens the full {{ all_topic_count }}-topic prototype library.</p>
+                <p class="graph-hint">Home highlights 6 category cards. Browse Categories opens the full {{ all_topic_count }}-category prototype library.</p>
             </section>
 
             <div class="home-dashboard-grid">
@@ -118,9 +134,9 @@
                     <div class="section-head">
                         <h2 id="mode-hub-title">
                             {% if current_mode == "Research" %}
-                                Research Mode
+                                Advanced Mode
                             {% else %}
-                                Explore Mode
+                                Standard Mode
                             {% endif %}
                         </h2>
                     </div>
@@ -137,22 +153,6 @@
                         {% endif %}
                     </div>
                 </section>
-
-                <section class="content-section home-panel home-recent-panel" aria-labelledby="recent-searches-title">
-                    <div class="section-head">
-                        <h2 id="recent-searches-title">Recent Searches</h2>
-                    </div>
-
-                    {% if recent_searches %}
-                        <ul class="recent-list">
-                            {% for search in recent_searches %}
-                                <li><a class="recent-link" href="{% url search_route_name %}?q={{ search|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">{{ search }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="empty-state">Start exploring vocabulary</p>
-                    {% endif %}
-                </section>
             </div>
         </main>
 
@@ -166,7 +166,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Categories</a>
         </nav>
     </div>
 {% endblock %}

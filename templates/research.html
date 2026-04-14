@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Research Graph | Vocabulary Explorer{% endblock %}
+{% block title %}Advanced Graph | Vocabulary Explorer{% endblock %}
 
 {% block extra_scripts %}
     <script src="{% static 'graph.js' %}" defer></script>
@@ -9,12 +9,12 @@
 
 {% block content %}
     <div class="app-shell">
-        {% include "includes/top_nav.html" with title="Research" show_back=True %}
+        {% include "includes/top_nav.html" with title=current_mode_label show_back=True %}
 
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="research-heading">
                 <div class="result-topline">
-                    <h1 id="research-heading" class="result-title">Research Graph</h1>
+                    <h1 id="research-heading" class="result-title">Advanced Graph</h1>
                 </div>
 
                 <form
@@ -24,7 +24,7 @@
                     role="search"
                     data-search-form
                 >
-                    <input type="hidden" name="mode" value="Research">
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
                     <input type="hidden" name="back" value="{{ back_url }}">
                     <label class="sr-only" for="research-word-search">Search words or categories</label>
                     <div class="search-field">
@@ -75,7 +75,7 @@
 
                 <section class="content-section" aria-labelledby="research-details-title">
                     <div class="section-head">
-                        <h2 id="research-details-title">Research Details</h2>
+                        <h2 id="research-details-title">Advanced Details</h2>
                     </div>
 
                     <div class="research-data-grid">
@@ -190,7 +190,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Categories</a>
         </nav>
     </div>
 {% endblock %}

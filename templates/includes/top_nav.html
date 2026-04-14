@@ -14,7 +14,7 @@
     <div class="mode-toggle" aria-label="Mode switch">
         {% for mode_option in mode_options %}
             <a class="mode-toggle-link {% if mode_option.is_current %}is-current{% endif %}" href="{{ mode_option.url }}">
-                {{ mode_option.value }}
+                {{ mode_option.label }}
             </a>
         {% endfor %}
     </div>

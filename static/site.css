@@ -409,11 +409,6 @@ button {
     min-width: 0;
 }
 
-.home-feature-panel,
-.home-recent-panel {
-    height: 100%;
-}
-
 .home-feature-panel .overview-card {
     gap: 10px;
     padding: 0;
@@ -440,16 +435,19 @@ button {
 }
 
 .home-recent-panel .recent-list {
-    display: grid;
-    gap: 8px;
     margin: 0;
     padding: 0;
     list-style: none;
     color: var(--muted);
 }
 
-.home-recent-panel .recent-link {
-    width: 100%;
+.home-recent-inline .recent-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.home-recent-inline .recent-link {
     justify-content: flex-start;
     padding: 9px 12px;
     border-color: var(--line);
@@ -465,7 +463,6 @@ button {
 }
 
 .home-topics-panel .topic-card-detail {
-    min-height: 116px;
     padding: 14px 16px;
     gap: 10px;
 }
@@ -1606,7 +1603,7 @@ select:focus-visible,
 
 @media (min-width: 960px) {
     .home-dashboard-grid {
-        grid-template-columns: minmax(0, 1.45fr) minmax(18rem, 0.9fr);
+        grid-template-columns: minmax(0, 1fr);
     }
 
     .saved-grid,

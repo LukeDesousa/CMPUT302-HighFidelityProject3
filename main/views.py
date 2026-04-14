@@ -14,6 +14,10 @@ TOPIC_VIEWS = ("list", "map")
 HOME_TOPIC_LIMIT = 6
 SEARCH_PLACEHOLDER = "Search words or categories"
 PROTOTYPE_SOURCE = "Prototype vocabulary set"
+MODE_LABELS = {
+    "Explore": "Standard",
+    "Research": "Advanced",
+}
 MODE_DETAILS = {
     "Explore": "Search and explore vocabulary",
     "Research": "Explore relationships between words",
@@ -28,7 +32,7 @@ SEARCH_TYPE_DETAILS = {
     "category": {
         "label": "Category",
         "option_label": "Category",
-        "description": "Search for a category before opening a topic.",
+        "description": "Search for a category before opening its details.",
         "placeholder": SEARCH_PLACEHOLDER,
     },
 }
@@ -143,7 +147,7 @@ TOPICS = (
         "name": "Fruits",
         "slug": "fruits",
         "icon": "fruits",
-        "summary": "Fruit words grouped into one browseable topic.",
+        "summary": "Fruit words grouped into one browseable category.",
         "words": (
             "apple",
             "berry",
@@ -302,7 +306,8 @@ WORD_LIBRARY = {
     "deer": make_word("deer", "animals", "atihk", "NA"),
 }
 
-RECENT_SEARCHES = ("horse", "fox", "school", "winter")
+MAX_RECENT_SEARCHES = 4
+DEFAULT_SUGGESTED_WORDS = ("horse", "fox", "school", "winter")
 
 
 def build_url(route_name, *, args=None, params=None):
@@ -335,6 +340,33 @@ def get_safe_back_url(raw_back_url, fallback_url):
     if raw_back_url and raw_back_url.startswith("/"):
         return raw_back_url
     return fallback_url
+
+
+def get_recent_searches(request):
+    recent_searches = request.session.get("recent_searches", [])
+    return [
+        recent_search
+        for recent_search in recent_searches
+        if isinstance(recent_search, str) and recent_search.strip()
+    ]
+
+
+def save_recent_searches(request, recent_searches):
+    request.session["recent_searches"] = recent_searches[:MAX_RECENT_SEARCHES]
+
+
+def remember_recent_search(request, search_query):
+    normalized_query = (search_query or "").strip().lower()
+    if not normalized_query:
+        return
+
+    updated_searches = [
+        recent_search
+        for recent_search in get_recent_searches(request)
+        if recent_search != normalized_query
+    ]
+    updated_searches.insert(0, normalized_query)
+    save_recent_searches(request, updated_searches)
 
 
 def get_topic_view(request):
@@ -486,6 +518,7 @@ def build_mode_options(current_mode, current_search_type):
     return [
         {
             "value": mode,
+            "label": MODE_LABELS[mode],
             "description": MODE_DETAILS[mode],
             "is_current": mode == current_mode,
             "url": build_url(
@@ -592,6 +625,7 @@ def build_collection_word_suggestions(current_mode, back_url):
 def build_shared_context(request, current_mode, search_type):
     return {
         "mode_options": build_mode_options(current_mode, search_type),
+        "current_mode_label": MODE_LABELS[current_mode],
         "current_search_type": search_type,
         "search_types": build_search_type_options(search_type),
         "search_placeholder": SEARCH_TYPE_DETAILS[search_type]["placeholder"],
@@ -1226,7 +1260,7 @@ def home(request):
     context = {
         "current_mode": current_mode,
         "search_query": "",
-        "recent_searches": RECENT_SEARCHES,
+        "recent_searches": get_recent_searches(request),
         "featured_topics": topic_cards[:HOME_TOPIC_LIMIT],
         "all_topic_count": len(topic_cards),
         "saved_word_count": len(get_saved_words(request)),
@@ -1255,6 +1289,12 @@ def search_results(request):
     ) or "horse"
     search_query = raw_query.strip() or "horse"
     normalized_query = search_query.lower()
+    searched_term = ""
+
+    if request.method != "POST":
+        searched_term = (request.GET.get("q") or "").strip()
+        if searched_term:
+            remember_recent_search(request, searched_term)
 
     if request.method == "POST":
         return handle_search_actions(request, current_mode, normalized_query, back_url)
@@ -1308,7 +1348,7 @@ def search_results(request):
             current_page_url,
             search_type=current_search_type,
         ),
-        "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in RECENT_SEARCHES],
+        "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in DEFAULT_SUGGESTED_WORDS],
         "saved_word_count": len(saved_words),
         "collection_count": len(collections),
         "collections": collections,
@@ -1331,6 +1371,10 @@ def research_page(request):
     fallback_back_url = build_url("home", params={"mode": "Research"})
     back_url = get_safe_back_url(request.GET.get("back"), fallback_back_url)
     search_query = (request.GET.get("q", "horse") or "horse").strip() or "horse"
+    searched_term = (request.GET.get("q") or "").strip()
+
+    if searched_term:
+        remember_recent_search(request, searched_term)
 
     if current_mode != "Research":
         return redirect(
@@ -1364,7 +1408,7 @@ def research_page(request):
         "current_page_url": current_page_url,
         "search_suggestions_json": json.dumps(search_suggestions),
         "research_graph": build_graph_data(result) if result else None,
-        "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in RECENT_SEARCHES],
+        "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in DEFAULT_SUGGESTED_WORDS],
         "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
     }
     context.update(build_shared_context(request, current_mode, current_search_type))
@@ -1510,6 +1554,8 @@ def browse_topics_page(request):
     fallback_back_url = build_url("home", params={"mode": current_mode})
     back_url = get_safe_back_url(request.GET.get("back"), fallback_back_url)
     search_query = (request.GET.get("q", "") or "").strip()
+    if search_query:
+        remember_recent_search(request, search_query)
     matching_topics = filter_topics(search_query)
     current_page_url = build_browse_topics_url(
         current_mode,

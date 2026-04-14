@@ -28,7 +28,7 @@
                             <h1 id="topic-title" class="detail-title">{{ topic.name }}</h1>
                         </div>
 
-                        <div class="view-toggle" aria-label="Topic display">
+                        <div class="view-toggle" aria-label="Category display">
                             <a class="toggle-link {% if topic_view == 'list' %}is-active{% endif %}" href="{{ list_view_url }}">List</a>
                             <a class="toggle-link {% if topic_view == 'map' %}is-active{% endif %}" href="{{ map_view_url }}">Map</a>
                         </div>
@@ -43,13 +43,13 @@
                                 <span data-graph-zoom-value>100%</span>
                             </div>
 
-                            <div class="graph-toolbar graph-toolbar-inline" aria-label="Topic map controls">
+                            <div class="graph-toolbar graph-toolbar-inline" aria-label="Category map controls">
                                 <button class="graph-control" type="button" data-graph-zoom-out aria-label="Zoom Out">-</button>
                                 <button class="graph-control graph-control-wide" type="button" data-graph-reset>Center</button>
                                 <button class="graph-control" type="button" data-graph-zoom-in aria-label="Zoom In">+</button>
                             </div>
 
-                            <div class="graph-viewport compact-graph" data-graph-viewport tabindex="0" aria-label="Interactive topic map">
+                            <div class="graph-viewport compact-graph" data-graph-viewport tabindex="0" aria-label="Interactive category map">
                                 <div class="graph-stage" data-graph-stage>
                                     <svg class="graph-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                                         {% for line in topic_graph.lines %}
@@ -58,17 +58,15 @@
                                     </svg>
 
                                     {% for node in topic_graph.nodes %}
-                                        {% if node.url %}
-                                            <a class="graph-node graph-node-{{ node.kind }} graph-node-link" href="{{ node.url }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
-                                                <strong>{{ node.label }}</strong>
-                                                <span>{{ node.meta }}</span>
-                                            </a>
-                                        {% else %}
-                                            <div class="graph-node" data-node-kind="{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
-                                                <strong>{{ node.label }}</strong>
-                                                <span>{{ node.meta }}</span>
-                                            </div>
-                                        {% endif %}
+                                        <a
+                                            class="graph-node graph-node-{{ node.kind }}{% if node.url %} graph-node-link{% endif %}"
+                                            data-node-kind="{{ node.kind }}"
+                                            {% if node.url %}href="{{ node.url }}"{% endif %}
+                                            style="left: {{ node.x }}%; top: {{ node.y }}%;"
+                                        >
+                                            <strong>{{ node.label }}</strong>
+                                            <span>{{ node.meta }}</span>
+                                        </a>
                                     {% endfor %}
                                 </div>
                             </div>
@@ -94,7 +92,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Topic</a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -103,7 +101,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{{ collections_url }}">Collections</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Categories</a>
         </nav>
     </div>
 {% endblock %}

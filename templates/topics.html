@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Browse Topics | Vocabulary Explorer{% endblock %}
+{% block title %}Browse Categories | Vocabulary Explorer{% endblock %}
 
 {% block content %}
     <div class="app-shell">
@@ -9,7 +9,7 @@
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="topics-search-title">
                 <div class="result-topline">
-                    <h1 id="topics-search-title" class="result-title">Browse Topics</h1>
+                    <h1 id="topics-search-title" class="result-title">Browse Categories</h1>
                 </div>
 
                 <form
@@ -46,13 +46,13 @@
 
             <section class="content-section" aria-labelledby="topics-title">
                 <div class="section-head">
-                    <h2 id="topics-title">Topic Results</h2>
+                    <h2 id="topics-title">Category Results</h2>
                 </div>
 
                 {% if has_topic_filter %}
-                    <p class="mode-intro">Showing {{ filtered_topic_count }} category matches for "{{ search_query }}". Browse all {{ topic_count }} prototype topics by clearing the search.</p>
+                    <p class="mode-intro">Showing {{ filtered_topic_count }} category matches for "{{ search_query }}". Browse all {{ topic_count }} prototype categories by clearing the search.</p>
                 {% else %}
-                    <p class="mode-intro">Home highlights 6 topic cards. This page shows all {{ topic_count }} topics in the prototype library.</p>
+                    <p class="mode-intro">Home highlights 6 category cards. This page shows all {{ topic_count }} categories in the prototype library.</p>
                 {% endif %}
 
                 {% if topics %}
@@ -73,7 +73,7 @@
         </main>
 
         <nav class="bottom-nav" aria-label="Primary">
-            <a class="nav-link" href="{{ current_page_url }}" aria-current="page">Topics</a>
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
             <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
                 <span class="sr-only">Home</span>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -82,7 +82,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{{ collections_url }}">Collections</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Categories</a>
         </nav>
     </div>
 {% endblock %}

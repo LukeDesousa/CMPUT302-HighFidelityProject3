@@ -4,7 +4,7 @@
 
 {% block content %}
     <div class="app-shell">
-        {% include "includes/top_nav.html" with title="Explore" show_back=True %}
+        {% include "includes/top_nav.html" with title=current_mode_label show_back=True %}
 
         <main class="screen-content">
             <section class="search-panel" aria-labelledby="search-heading">
@@ -103,7 +103,7 @@
                         <h2 id="category-link-title">Browse This Category</h2>
                     </div>
 
-                    <p class="mode-intro">Open {{ result.topic_name }} to switch between the word list and the topic map.</p>
+                    <p class="mode-intro">Open {{ result.topic_name }} to switch between the word list and the category map.</p>
                     <a class="topic-card topic-link-card" href="{% url 'topic-detail' result.topic_slug %}?mode={{ current_mode|urlencode }}&back={{ current_page_url|urlencode }}">
                         View {{ result.topic_name }} Category
                     </a>
@@ -138,7 +138,7 @@
                     <path d="M10 20v-5.5h4V20"></path>
                 </svg>
             </a>
-            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Categories</a>
         </nav>
     </div>
 {% endblock %}

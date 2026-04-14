@@ -7,10 +7,11 @@ class HomePageTests(TestCase):
         response = self.client.get(reverse("home"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Explore by Topics")
+        self.assertContains(response, "Recent Searches")
+        self.assertContains(response, "Explore by Categories")
         self.assertContains(response, "Search words or categories")
-        self.assertContains(response, "Explore")
-        self.assertContains(response, "Research")
+        self.assertContains(response, "Standard")
+        self.assertContains(response, "Advanced")
         self.assertContains(response, 'class="mode-toggle"', html=False)
 
         for slug, label in (
@@ -26,11 +27,35 @@ class HomePageTests(TestCase):
 
         self.assertContains(response, 'class="topic-card topic-card-detail topic-card-spotlight"', count=6, html=False)
 
+    def test_home_page_shows_session_recent_searches_under_search_bar(self):
+        self.client.get(
+            reverse("search-results"),
+            {"q": "rabbit", "mode": "Explore"},
+        )
+        self.client.get(
+            reverse("search-results"),
+            {"q": "horse", "mode": "Explore"},
+        )
+        self.client.get(
+            reverse("search-results"),
+            {"q": "rabbit", "mode": "Explore"},
+        )
+
+        response = self.client.get(reverse("home"))
+
+        self.assertEqual(self.client.session["recent_searches"], ["rabbit", "horse"])
+        self.assertContains(response, "Recent Searches")
+        self.assertContains(response, ">rabbit</a>", html=False)
+        self.assertContains(response, ">horse</a>", html=False)
+
+        content = response.content.decode()
+        self.assertLess(content.index("Recent Searches"), content.index("Explore by Categories"))
+
     def test_browse_topics_page_renders_all_topics(self):
         response = self.client.get(reverse("browse-topics"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Browse Topics")
+        self.assertContains(response, "Browse Categories")
         self.assertContains(response, "Animals")
         self.assertContains(response, reverse("topic-detail", args=["animals"]))
 
@@ -49,7 +74,7 @@ class HomePageTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Research Graph")
+        self.assertContains(response, "Advanced Graph")
         self.assertContains(response, "mistatim")
         self.assertContains(response, "ᒥᐢᑕᑎᒼ")
         self.assertContains(response, "Word Class")
@@ -286,5 +311,5 @@ class HomePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "List")
         self.assertContains(response, "Map")
-        self.assertContains(response, "Interactive topic map")
+        self.assertContains(response, "Interactive category map")
         self.assertContains(response, 'data-graph-workspace', html=False)
