@@ -57,22 +57,14 @@
                                 <p class="result-english">{{ result.english_word|title }}</p>
                             </div>
 
-                            <form class="inline-form inline-form-compact save-word-form" method="post" action="{% url 'search-results' %}">
-                                {% csrf_token %}
-                                <input type="hidden" name="action" value="toggle_saved_word">
-                                <input type="hidden" name="mode" value="{{ current_mode }}">
-                                <input type="hidden" name="q" value="{{ search_query }}">
-                                <input type="hidden" name="back" value="{{ back_url }}">
-                                <input type="hidden" name="search_type" value="{{ current_search_type }}">
-                                <button class="save-word-button {% if result.is_saved %}is-saved{% endif %}" type="submit">
+                            <a class="save-word-button {% if result.is_saved %}is-saved{% endif %}" href="{{ select_collection_url }}">
                                     <span class="save-word-icon" aria-hidden="true">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                             <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3-6 3V5.5a1 1 0 0 1 1-1z"></path>
                                         </svg>
                                     </span>
-                                    <span>{% if result.is_saved %}Saved{% else %}Save Word to Collection{% endif %}</span>
-                                </button>
-                            </form>
+                                    <span>Add to Collection</span>
+                            </a>
                         </div>
 
                         {% if result.has_translation %}

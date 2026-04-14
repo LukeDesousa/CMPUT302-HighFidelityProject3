@@ -87,26 +87,25 @@ class HomePageTests(TestCase):
         self.assertContains(response, "Animals")
         self.assertContains(response, 'class="browse-topic-card"', count=1, html=False)
 
-    def test_explore_mode_can_save_word_and_prompt_for_collection(self):
-        response = self.client.post(
+    def test_explore_mode_word_page_links_to_select_collection(self):
+        response = self.client.get(
             reverse("search-results"),
             {
-                "action": "toggle_saved_word",
                 "mode": "Explore",
                 "q": "rabbit",
                 "back": reverse("home"),
                 "search_type": "word",
             },
-            follow=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Added to Collection")
+        self.assertContains(response, "Add to Collection")
         self.assertContains(response, "English Word")
         self.assertContains(response, "Related Words")
         self.assertContains(response, "Similarity")
         self.assertNotContains(response, 'id="collection-tools-title"', html=False)
-        self.assertIn("rabbit", self.client.session["saved_words"])
+        self.assertContains(response, reverse("select-collection"), html=False)
+        self.assertContains(response, "word=rabbit", html=False)
 
     def test_collections_page_renders_saved_words_and_collections(self):
         session = self.client.session
@@ -180,30 +179,50 @@ class HomePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Export started")
 
-    def test_search_result_can_add_word_to_existing_collection(self):
+    def test_select_collection_page_can_add_word_to_existing_collection(self):
         session = self.client.session
         session["collections"] = [{"name": "Animals", "words": [], "notes": ""}]
         session.save()
 
         response = self.client.post(
-            reverse("search-results"),
+            reverse("select-collection"),
             {
                 "action": "add_to_collection",
                 "mode": "Explore",
-                "q": "horse",
+                "word": "horse",
                 "collection_name": "Animals",
-                "back": reverse("home"),
-                "search_type": "word",
+                "back": reverse("search-results"),
             },
             follow=True,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Added to Collection")
+        self.assertContains(response, "Horse added to Animals")
         self.assertContains(response, "English Word")
         self.assertContains(response, "Similarity")
         self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertIn("horse", self.client.session["saved_words"])
+        self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
+
+    def test_create_collection_flow_creates_collection_adds_word_and_returns(self):
+        response = self.client.post(
+            reverse("create-collection"),
+            {
+                "action": "create_collection",
+                "mode": "Explore",
+                "word": "horse",
+                "back": reverse("select-collection"),
+                "return_to": reverse("search-results"),
+                "collection_name": "Animal Basics",
+                "collection_notes": "Warm-up vocabulary",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Horse added to Animal Basics")
+        self.assertEqual(self.client.session["collections"][0]["name"], "Animal Basics")
+        self.assertEqual(self.client.session["collections"][0]["notes"], "Warm-up vocabulary")
         self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
 
     def test_remove_saved_word_also_removes_collection_membership(self):

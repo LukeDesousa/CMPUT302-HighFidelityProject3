@@ -395,6 +395,29 @@ def build_collections_url(current_mode, back_url, selected_word=None):
     )
 
 
+def build_select_collection_url(current_mode, back_url, selected_word):
+    return build_url(
+        "select-collection",
+        params={
+            "mode": current_mode,
+            "back": back_url,
+            "word": selected_word,
+        },
+    )
+
+
+def build_create_collection_url(current_mode, back_url, selected_word, return_url):
+    return build_url(
+        "create-collection",
+        params={
+            "mode": current_mode,
+            "back": back_url,
+            "word": selected_word,
+            "return_to": return_url,
+        },
+    )
+
+
 def get_saved_words(request):
     saved_words = request.session.get("saved_words", [])
     return [word for word in saved_words if word in WORD_LIBRARY]
@@ -968,36 +991,31 @@ def update_collection_details(collections, current_name, next_name, notes):
     return updated_collections
 
 
+def build_added_to_collection_message(word_key, collection_name):
+    word_label = WORD_LIBRARY[word_key]["english_word"].title()
+    return f"{word_label} added to {collection_name}"
+
+
 def handle_search_actions(request, current_mode, word_key, back_url):
     action = request.POST.get("action", "").strip()
     search_type = get_current_search_type(request)
+    current_page_url = build_word_lookup_url(
+        request.POST.get("q", word_key or "horse"),
+        current_mode,
+        back_url,
+        search_type=search_type,
+    )
 
     if current_mode != "Explore":
         return redirect(
-            build_word_lookup_url(
-                request.POST.get("q", word_key or "horse"),
-                current_mode,
-                back_url,
-                search_type=search_type,
-            )
+            current_page_url
         )
 
     saved_words = get_saved_words(request)
     collections = get_collections(request)
 
     if action == "toggle_saved_word" and word_key in WORD_LIBRARY:
-        if word_key in saved_words:
-            save_saved_words(
-                request,
-                [saved_word for saved_word in saved_words if saved_word != word_key],
-            )
-            save_collections(request, remove_word_from_all_collections(collections, word_key))
-            clear_collection_prompt(request)
-            set_toast(request, "Removed from Collection")
-        else:
-            save_saved_words(request, normalize_saved_words(saved_words, word_key))
-            set_collection_prompt(request, word_key)
-            set_toast(request, "Added to Collection")
+        return redirect(build_select_collection_url(current_mode, current_page_url, word_key))
 
     if action == "create_collection" and word_key in WORD_LIBRARY:
         collection_name = request.POST.get("collection_name", "").strip()
@@ -1038,14 +1056,7 @@ def handle_search_actions(request, current_mode, word_key, back_url):
         )
         set_toast(request, "Removed from Collection")
 
-    return redirect(
-        build_word_lookup_url(
-            request.POST.get("q", word_key or "horse"),
-            current_mode,
-            back_url,
-            search_type=search_type,
-        )
-    )
+    return redirect(current_page_url)
 
 
 def handle_collection_actions(request, selected_word, back_url):
@@ -1140,6 +1151,60 @@ def handle_collection_actions(request, selected_word, back_url):
                 redirect_word = None
 
     return redirect(build_collections_url("Explore", back_url, redirect_word))
+
+
+def handle_select_collection_actions(request, current_mode, selected_word, back_url):
+    action = request.POST.get("action", "").strip()
+    if action != "add_to_collection" or selected_word not in WORD_LIBRARY:
+        return redirect(build_select_collection_url(current_mode, back_url, selected_word))
+
+    collection_name = request.POST.get("collection_name", "").strip()
+    collections = get_collections(request)
+    saved_words = get_saved_words(request)
+
+    if any(collection["name"] == collection_name for collection in collections):
+        save_saved_words(request, normalize_saved_words(saved_words, selected_word))
+        save_collections(
+            request,
+            add_word_to_collections(collections, collection_name, selected_word),
+        )
+        set_toast(request, build_added_to_collection_message(selected_word, collection_name))
+
+    return redirect(back_url)
+
+
+def handle_create_collection_flow(request, current_mode, selected_word, back_url, return_url):
+    action = request.POST.get("action", "").strip()
+    if action != "create_collection" or selected_word not in WORD_LIBRARY:
+        return redirect(
+            build_create_collection_url(current_mode, back_url, selected_word, return_url)
+        )
+
+    collection_name = request.POST.get("collection_name", "").strip()
+    collection_notes = request.POST.get("collection_notes", "").strip()
+    collections = get_collections(request)
+    saved_words = get_saved_words(request)
+
+    if collection_name and collection_name_is_available(collections, collection_name):
+        save_saved_words(request, normalize_saved_words(saved_words, selected_word))
+        save_collections(
+            request,
+            [
+                {
+                    "name": collection_name,
+                    "notes": collection_notes,
+                    "words": [selected_word],
+                },
+                *collections,
+            ],
+        )
+        set_toast(request, build_added_to_collection_message(selected_word, collection_name))
+        return redirect(return_url)
+
+    if collection_name:
+        set_toast(request, "Choose a different collection name", kind="warning")
+
+    return redirect(build_create_collection_url(current_mode, back_url, selected_word, return_url))
 
 
 def home(request):
@@ -1243,6 +1308,11 @@ def search_results(request):
         "collection_count": len(collections),
         "collections": collections,
         "collections_url": build_collections_url("Explore", current_page_url, normalized_query if result else None),
+        "select_collection_url": (
+            build_select_collection_url(current_mode, current_page_url, normalized_query)
+            if result
+            else None
+        ),
         "show_collection_prompt": collection_prompt_word == normalized_query,
         "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
     }
@@ -1329,6 +1399,99 @@ def collections_page(request):
             "collection_count": len(get_collections(request)),
             "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
             "collection_word_suggestions_json": json.dumps(collection_word_suggestions),
+        },
+    )
+
+
+def select_collection_page(request):
+    current_mode = get_current_mode(request)
+    current_search_type = get_current_search_type(request)
+    fallback_back_url = build_url("home", params={"mode": current_mode})
+    back_url = get_safe_back_url(
+        request.POST.get("back") or request.GET.get("back"),
+        fallback_back_url,
+    )
+    selected_word = (request.POST.get("word") or request.GET.get("word") or "").strip().lower()
+    selected_word = selected_word if selected_word in WORD_LIBRARY else None
+
+    if selected_word is None:
+        return redirect(back_url)
+
+    if request.method == "POST":
+        return handle_select_collection_actions(request, current_mode, selected_word, back_url)
+
+    current_page_url = build_select_collection_url(current_mode, back_url, selected_word)
+
+    return render(
+        request,
+        "select_collection.html",
+        {
+            **build_shared_context(request, current_mode, current_search_type),
+            "current_mode": current_mode,
+            "back_url": back_url,
+            "current_page_url": current_page_url,
+            "selected_word": selected_word,
+            "selected_result": build_word_result(selected_word),
+            "collections": build_collections_context(request, current_word=selected_word),
+            "create_collection_url": build_create_collection_url(
+                current_mode,
+                current_page_url,
+                selected_word,
+                back_url,
+            ),
+            "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
+            "collections_url": build_collections_url("Explore", current_page_url, selected_word),
+        },
+    )
+
+
+def create_collection_page(request):
+    current_mode = get_current_mode(request)
+    current_search_type = get_current_search_type(request)
+    fallback_back_url = build_url("home", params={"mode": current_mode})
+    back_url = get_safe_back_url(
+        request.POST.get("back") or request.GET.get("back"),
+        fallback_back_url,
+    )
+    selected_word = (request.POST.get("word") or request.GET.get("word") or "").strip().lower()
+    selected_word = selected_word if selected_word in WORD_LIBRARY else None
+    return_url = get_safe_back_url(
+        request.POST.get("return_to") or request.GET.get("return_to"),
+        back_url,
+    )
+
+    if selected_word is None:
+        return redirect(return_url)
+
+    if request.method == "POST":
+        return handle_create_collection_flow(
+            request,
+            current_mode,
+            selected_word,
+            back_url,
+            return_url,
+        )
+
+    current_page_url = build_create_collection_url(
+        current_mode,
+        back_url,
+        selected_word,
+        return_url,
+    )
+
+    return render(
+        request,
+        "create_collection.html",
+        {
+            **build_shared_context(request, current_mode, current_search_type),
+            "current_mode": current_mode,
+            "back_url": back_url,
+            "current_page_url": current_page_url,
+            "selected_word": selected_word,
+            "selected_result": build_word_result(selected_word),
+            "return_url": return_url,
+            "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
+            "collections_url": build_collections_url("Explore", current_page_url, selected_word),
         },
     )
 

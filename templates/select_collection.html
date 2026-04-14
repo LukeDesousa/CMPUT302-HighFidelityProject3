@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Add to Collection | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        {% include "includes/top_nav.html" with title="Add to Collection" show_back=True %}
+
+        <main class="screen-content collections-screen">
+            <section class="content-section" aria-labelledby="select-collection-title">
+                <div class="section-head section-head-split">
+                    <div>
+                        <h1 id="select-collection-title" class="result-title">Add to Collection</h1>
+                        <p class="mode-intro">Choose a collection for {{ selected_result.english_word|title }}.</p>
+                    </div>
+                    <a class="action-button action-button-secondary" href="{{ create_collection_url }}">Create New Collection</a>
+                </div>
+
+                <div class="translation-card collection-word-preview">
+                    <p class="translation-language">English Word</p>
+                    <p class="result-english">{{ selected_result.english_word|title }}</p>
+                    {% if selected_result.has_translation %}
+                        <p class="translation-language">{{ selected_result.cree_label }}</p>
+                        <p class="translation-word">{{ selected_result.cree_translation }}</p>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="content-section" aria-labelledby="collection-list-title">
+                <div class="section-head">
+                    <h2 id="collection-list-title">Collections</h2>
+                </div>
+
+                {% if collections %}
+                    <div class="collection-choice-stack">
+                        {% for collection in collections %}
+                            <article class="collection-choice-card">
+                                <div>
+                                    <strong>{{ collection.name }}</strong>
+                                    <span>{{ collection.word_count }} words</span>
+                                </div>
+
+                                <form class="inline-form inline-form-compact" method="post" action="{% url 'select-collection' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="add_to_collection">
+                                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                                    <input type="hidden" name="back" value="{{ back_url }}">
+                                    <input type="hidden" name="word" value="{{ selected_word }}">
+                                    <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                    <button class="action-button" type="submit">Add to {{ collection.name }}</button>
+                                </form>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-state">Create your first collection to save this word.</p>
+                {% endif %}
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}

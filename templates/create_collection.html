@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Create Collection | Vocabulary Explorer{% endblock %}
+
+{% block content %}
+    <div class="app-shell">
+        {% include "includes/top_nav.html" with title="Create Collection" show_back=True %}
+
+        <main class="screen-content collections-screen">
+            <section class="content-section" aria-labelledby="create-collection-title">
+                <div class="section-head">
+                    <h1 id="create-collection-title" class="result-title">Create Collection</h1>
+                </div>
+
+                <p class="mode-intro">Create a collection and add {{ selected_result.english_word|title }} to it.</p>
+
+                <form class="collection-builder-shell" method="post" action="{% url 'create-collection' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_collection">
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    <input type="hidden" name="return_to" value="{{ return_url }}">
+                    <input type="hidden" name="word" value="{{ selected_word }}">
+
+                    <div class="builder-field">
+                        <label class="field-label" for="collection-name">Collection Name</label>
+                        <input
+                            id="collection-name"
+                            class="text-input"
+                            type="text"
+                            name="collection_name"
+                            placeholder="New collection name"
+                            required
+                        >
+                    </div>
+
+                    <div class="builder-field">
+                        <label class="field-label" for="collection-notes">Description</label>
+                        <textarea
+                            id="collection-notes"
+                            class="text-area"
+                            name="collection_notes"
+                            rows="4"
+                            placeholder="Optional description"
+                        ></textarea>
+                    </div>
+
+                    <div class="translation-card collection-word-preview">
+                        <p class="translation-language">English Word</p>
+                        <p class="result-english">{{ selected_result.english_word|title }}</p>
+                        {% if selected_result.has_translation %}
+                            <p class="translation-language">{{ selected_result.cree_label }}</p>
+                            <p class="translation-word">{{ selected_result.cree_translation }}</p>
+                        {% endif %}
+                    </div>
+
+                    <button class="action-button collection-save-button" type="submit">Create Collection</button>
+                </form>
+            </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="Primary">
+            <a class="nav-link" href="{{ collections_url }}">Collections</a>
+            <a class="nav-link nav-home" href="{% url 'home' %}?mode={{ current_mode|urlencode }}">
+                <span class="sr-only">Home</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 10.5L12 4l8 6.5"></path>
+                    <path d="M6.5 9.5V20h11V9.5"></path>
+                    <path d="M10 20v-5.5h4V20"></path>
+                </svg>
+            </a>
+            <a class="nav-link" href="{{ browse_topics_url }}">Browse Topics</a>
+        </nav>
+    </div>
+{% endblock %}
