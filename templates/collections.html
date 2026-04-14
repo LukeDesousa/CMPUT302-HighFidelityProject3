@@ -45,7 +45,7 @@
 
             <section class="content-section" aria-labelledby="collection-builder-title">
                 <div class="section-head">
-                    <h2 id="collection-builder-title">Create Collection</h2>
+                    <h2 id="collection-builder-title">Create a New Collection</h2>
                 </div>
 
                 <p class="mode-intro">Create a collection, add an optional note, and attach a selected word if you have one open.</p>
@@ -75,7 +75,7 @@
                     </div>
 
                     <div class="builder-field collection-word-builder">
-                        <label class="field-label" for="collection-word-search">Word</label>
+                        <label class="field-label" for="collection-word-search">Add a Word</label>
                         <form
                             class="search-form search-form-stack search-form-mini collection-word-search"
                             action="{% url 'collections' %}"
@@ -135,7 +135,7 @@
                         ></textarea>
                     </div>
 
-                    <button class="action-button collection-save-button" type="submit" form="collection-builder-form">Create Collection</button>
+                    <button class="action-button collection-save-button" type="submit" form="collection-builder-form">Create a New Collection</button>
                 </div>
             </section>
 
@@ -210,6 +210,18 @@
                                             <button class="action-button" type="submit">Add {{ selected_result.english_word|title }}</button>
                                         </form>
                                     {% endif %}
+
+                                    <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="export_collection">
+                                        <input type="hidden" name="collection_name" value="{{ collection.name }}">
+                                        <input type="hidden" name="mode" value="{{ current_mode }}">
+                                        <input type="hidden" name="back" value="{{ back_url }}">
+                                        {% if selected_word %}
+                                            <input type="hidden" name="word" value="{{ selected_word }}">
+                                        {% endif %}
+                                        <button class="action-button action-button-secondary" type="submit">Export PDF</button>
+                                    </form>
 
                                     <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
                                         {% csrf_token %}

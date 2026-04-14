@@ -70,7 +70,7 @@
                                             <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3-6 3V5.5a1 1 0 0 1 1-1z"></path>
                                         </svg>
                                     </span>
-                                    <span>{% if result.is_saved %}Saved{% else %}Save Word{% endif %}</span>
+                                    <span>{% if result.is_saved %}Saved{% else %}Save Word to Collection{% endif %}</span>
                                 </button>
                             </form>
                         </div>
@@ -175,7 +175,7 @@
                             <input type="hidden" name="back" value="{{ back_url }}">
                             <input type="hidden" name="search_type" value="{{ current_search_type }}">
                             <input class="text-input" type="text" name="collection_name" placeholder="New collection name">
-                            <button class="action-button" type="submit">Create Collection</button>
+                            <button class="action-button" type="submit">Create a New Collection</button>
                         </form>
                     {% else %}
                         <p class="empty-state">Save this word to start building collections.</p>

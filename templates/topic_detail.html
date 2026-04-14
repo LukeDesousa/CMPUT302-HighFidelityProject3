@@ -64,7 +64,7 @@
                                                 <span>{{ node.meta }}</span>
                                             </a>
                                         {% else %}
-                                            <div class="graph-node graph-node-{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
+                                            <div class="graph-node" data-node-kind="{{ node.kind }}" style="left: {{ node.x }}%; top: {{ node.y }}%;">
                                                 <strong>{{ node.label }}</strong>
                                                 <span>{{ node.meta }}</span>
                                             </div>

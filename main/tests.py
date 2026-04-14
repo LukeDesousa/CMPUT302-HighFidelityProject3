@@ -158,6 +158,25 @@ class HomePageTests(TestCase):
         self.assertEqual(self.client.session["collections"][0]["name"], "Animal Set")
         self.assertEqual(self.client.session["collections"][0]["notes"], "Updated notes")
 
+    def test_collections_page_can_show_export_toast(self):
+        session = self.client.session
+        session["collections"] = [{"name": "Animals", "words": ["horse"], "notes": ""}]
+        session.save()
+
+        response = self.client.post(
+            reverse("collections"),
+            {
+                "action": "export_collection",
+                "mode": "Explore",
+                "collection_name": "Animals",
+                "back": reverse("home"),
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Export started")
+
     def test_search_result_can_add_word_to_existing_collection(self):
         session = self.client.session
         session["collections"] = [{"name": "Animals", "words": [], "notes": ""}]

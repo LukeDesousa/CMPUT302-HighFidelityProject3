@@ -1105,6 +1105,9 @@ def handle_collection_actions(request, selected_word, back_url):
             save_collections(request, updated_collections)
             set_toast(request, "Collection deleted")
 
+    if action == "export_collection":
+        set_toast(request, "Export started")
+
     if action == "add_to_collection" and selected_word in WORD_LIBRARY:
         collection_name = request.POST.get("collection_name", "").strip()
         save_saved_words(request, normalize_saved_words(saved_words, selected_word))
