@@ -1392,6 +1392,9 @@ def research_page(request):
         return redirect(build_topic_detail_url(topic_match["slug"], current_mode, back_url))
 
     result = build_word_result(normalized_query) if normalized_query in WORD_LIBRARY else None
+    saved_words = get_saved_words(request)
+    if result is not None:
+        result["is_saved"] = normalized_query in saved_words
     current_page_url = build_word_lookup_url(
         search_query,
         current_mode,
@@ -1409,6 +1412,11 @@ def research_page(request):
         "search_suggestions_json": json.dumps(search_suggestions),
         "research_graph": build_graph_data(result) if result else None,
         "suggested_words": [WORD_LIBRARY[word]["english_word"] for word in DEFAULT_SUGGESTED_WORDS],
+        "select_collection_url": (
+            build_select_collection_url(current_mode, current_page_url, normalized_query)
+            if result
+            else None
+        ),
         "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
     }
     context.update(build_shared_context(request, current_mode, current_search_type))

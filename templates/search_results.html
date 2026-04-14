@@ -51,21 +51,8 @@
                     </div>
 
                     <div class="translation-card">
-                        <div class="translation-card-head">
-                            <div>
-                                <p class="translation-language">English Word</p>
-                                <p class="result-english">{{ result.english_word|title }}</p>
-                            </div>
-
-                            <a class="save-word-button {% if result.is_saved %}is-saved{% endif %}" href="{{ select_collection_url }}">
-                                    <span class="save-word-icon" aria-hidden="true">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                            <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3-6 3V5.5a1 1 0 0 1 1-1z"></path>
-                                        </svg>
-                                    </span>
-                                    <span>Add to Collection</span>
-                            </a>
-                        </div>
+                        <p class="translation-language">English Word</p>
+                        <p class="result-english">{{ result.english_word|title }}</p>
 
                         {% if result.has_translation %}
                             <p class="translation-language">{{ result.cree_label }}</p>
@@ -74,12 +61,14 @@
                             <p class="translation-word translation-pending">No translation available</p>
                         {% endif %}
 
-                        {% if result.is_saved %}
-                            <div class="collection-status-banner">
-                                <strong>Added to Collection</strong>
-                                <span>This word is saved and ready to organize.</span>
-                            </div>
-                        {% endif %}
+                        <a class="save-word-button translation-card-action {% if result.is_saved %}is-saved{% endif %}" href="{{ select_collection_url }}">
+                            <span class="save-word-icon" aria-hidden="true">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M7 4.5h10a1 1 0 0 1 1 1V20l-6-3-6 3V5.5a1 1 0 0 1 1-1z"></path>
+                                </svg>
+                            </span>
+                            <span>{% if result.is_saved %}Add to More Collections{% else %}Add to Collection{% endif %}</span>
+                        </a>
                     </div>
                 </section>
 

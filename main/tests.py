@@ -75,6 +75,8 @@ class HomePageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Advanced Graph")
+        self.assertContains(response, "English Word")
+        self.assertContains(response, "Add to Collection")
         self.assertContains(response, "mistatim")
         self.assertContains(response, "ᒥᐢᑕᑎᒼ")
         self.assertContains(response, "Word Class")
@@ -82,6 +84,33 @@ class HomePageTests(TestCase):
         self.assertContains(response, "Similarity")
         self.assertContains(response, 'data-graph-workspace', html=False)
         self.assertContains(response, 'data-graph-node', html=False)
+        self.assertContains(response, reverse("select-collection"), html=False)
+        self.assertContains(response, "word=horse", html=False)
+
+    def test_research_mode_collection_flow_returns_to_graph(self):
+        session = self.client.session
+        session["collections"] = [{"name": "Animals", "words": [], "notes": ""}]
+        session.save()
+
+        back_url = f"{reverse('research')}?q=horse&mode=Research"
+        response = self.client.post(
+            reverse("select-collection"),
+            {
+                "action": "add_to_collection",
+                "mode": "Research",
+                "word": "horse",
+                "collection_name": "Animals",
+                "back": back_url,
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Advanced Graph")
+        self.assertContains(response, "Horse added to Animals")
+        self.assertContains(response, "Add to More Collections")
+        self.assertNotContains(response, "This word is saved and ready to organize.")
+        self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
 
     def test_added_words_render_fuller_prototype_data(self):
         response = self.client.get(
@@ -224,6 +253,8 @@ class HomePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Horse added to Animals")
         self.assertContains(response, "English Word")
+        self.assertContains(response, "Add to More Collections")
+        self.assertNotContains(response, "This word is saved and ready to organize.")
         self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertIn("horse", self.client.session["saved_words"])
         self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
