@@ -102,7 +102,10 @@ class HomePageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Added to Collection")
-        self.assertContains(response, "Add to Collection?")
+        self.assertContains(response, "English Word")
+        self.assertContains(response, "Related Words")
+        self.assertContains(response, "Similarity")
+        self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertIn("rabbit", self.client.session["saved_words"])
 
     def test_collections_page_renders_saved_words_and_collections(self):
@@ -196,7 +199,10 @@ class HomePageTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, ">Remove<", html=False)
+        self.assertContains(response, "Added to Collection")
+        self.assertContains(response, "English Word")
+        self.assertContains(response, "Similarity")
+        self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertIn("horse", self.client.session["saved_words"])
         self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
 
