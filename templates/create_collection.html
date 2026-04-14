@@ -12,7 +12,13 @@
                     <h1 id="create-collection-title" class="result-title">Create Collection</h1>
                 </div>
 
-                <p class="mode-intro">Create a collection and add {{ selected_result.english_word|title }} to it.</p>
+                <p class="mode-intro">
+                    {% if selected_result %}
+                        Create a collection and add {{ selected_result.english_word|title }} to it.
+                    {% else %}
+                        Create a collection, then add words to it from the collections page.
+                    {% endif %}
+                </p>
 
                 <form class="collection-builder-shell" method="post" action="{% url 'create-collection' %}">
                     {% csrf_token %}
@@ -45,14 +51,16 @@
                         ></textarea>
                     </div>
 
-                    <div class="translation-card collection-word-preview">
-                        <p class="translation-language">English Word</p>
-                        <p class="result-english">{{ selected_result.english_word|title }}</p>
-                        {% if selected_result.has_translation %}
-                            <p class="translation-language">{{ selected_result.cree_label }}</p>
-                            <p class="translation-word">{{ selected_result.cree_translation }}</p>
-                        {% endif %}
-                    </div>
+                    {% if selected_result %}
+                        <div class="translation-card collection-word-preview">
+                            <p class="translation-language">English Word</p>
+                            <p class="result-english">{{ selected_result.english_word|title }}</p>
+                            {% if selected_result.has_translation %}
+                                <p class="translation-language">{{ selected_result.cree_label }}</p>
+                                <p class="translation-word">{{ selected_result.cree_translation }}</p>
+                            {% endif %}
+                        </div>
+                    {% endif %}
 
                     <button class="action-button collection-save-button" type="submit">Create Collection</button>
                 </form>

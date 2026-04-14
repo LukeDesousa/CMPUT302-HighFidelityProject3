@@ -1175,7 +1175,7 @@ def handle_select_collection_actions(request, current_mode, selected_word, back_
 
 def handle_create_collection_flow(request, current_mode, selected_word, back_url, return_url):
     action = request.POST.get("action", "").strip()
-    if action != "create_collection" or selected_word not in WORD_LIBRARY:
+    if action != "create_collection":
         return redirect(
             build_create_collection_url(current_mode, back_url, selected_word, return_url)
         )
@@ -1186,19 +1186,24 @@ def handle_create_collection_flow(request, current_mode, selected_word, back_url
     saved_words = get_saved_words(request)
 
     if collection_name and collection_name_is_available(collections, collection_name):
-        save_saved_words(request, normalize_saved_words(saved_words, selected_word))
+        initial_words = [selected_word] if selected_word in WORD_LIBRARY else []
+        if initial_words:
+            save_saved_words(request, normalize_saved_words(saved_words, selected_word))
         save_collections(
             request,
             [
                 {
                     "name": collection_name,
                     "notes": collection_notes,
-                    "words": [selected_word],
+                    "words": initial_words,
                 },
                 *collections,
             ],
         )
-        set_toast(request, build_added_to_collection_message(selected_word, collection_name))
+        if initial_words:
+            set_toast(request, build_added_to_collection_message(selected_word, collection_name))
+        else:
+            set_toast(request, "Collection created")
         return redirect(return_url)
 
     if collection_name:
@@ -1397,6 +1402,12 @@ def collections_page(request):
             "saved_word_count": len(get_saved_words(request)),
             "collections": build_collections_context(request, current_word=selected_word),
             "collection_count": len(get_collections(request)),
+            "create_collection_url": build_create_collection_url(
+                current_mode,
+                current_page_url,
+                selected_word,
+                current_page_url,
+            ),
             "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
             "collection_word_suggestions_json": json.dumps(collection_word_suggestions),
         },
@@ -1460,9 +1471,6 @@ def create_collection_page(request):
         back_url,
     )
 
-    if selected_word is None:
-        return redirect(return_url)
-
     if request.method == "POST":
         return handle_create_collection_flow(
             request,
@@ -1488,7 +1496,7 @@ def create_collection_page(request):
             "back_url": back_url,
             "current_page_url": current_page_url,
             "selected_word": selected_word,
-            "selected_result": build_word_result(selected_word),
+            "selected_result": build_word_result(selected_word) if selected_word else None,
             "return_url": return_url,
             "browse_topics_url": build_browse_topics_url(current_mode, current_page_url),
             "collections_url": build_collections_url("Explore", current_page_url, selected_word),

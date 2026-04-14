@@ -7,75 +7,26 @@
         {% include "includes/top_nav.html" with title="Collections" show_back=True %}
 
         <main class="screen-content collections-screen">
-            <section class="content-section" aria-labelledby="saved-words-title">
+            <section class="content-section" aria-labelledby="collection-word-title">
                 <div class="section-head section-head-split">
                     <div>
-                        <h1 id="saved-words-title" class="result-title">Saved Words</h1>
-                        <p class="mode-intro">{{ saved_word_count }} saved words across {{ collection_count }} collections.</p>
+                        <h1 id="collection-word-title" class="result-title">Add a Word</h1>
+                        <p class="mode-intro">
+                            {% if selected_result %}
+                                Choose a collection for {{ selected_result.english_word|title }} below.
+                            {% else %}
+                                Search for a word first, then add it to one of your collections.
+                            {% endif %}
+                        </p>
                     </div>
                     {% if selected_result %}
                         <span class="status-pill">Selected: {{ selected_result.english_word|title }}</span>
                     {% endif %}
                 </div>
 
-                {% if saved_words %}
-                    <div class="saved-grid">
-                        {% for saved_word in saved_words %}
-                            <article class="saved-card">
-                                <a class="saved-card-link" href="{% url search_route_name %}?q={{ saved_word.english_word|urlencode }}&mode={{ current_mode|urlencode }}&back={{ request.get_full_path|urlencode }}">
-                                    <strong>{{ saved_word.english_word|title }}</strong>
-                                    <span>{% if saved_word.cree_translation %}{{ saved_word.cree_translation }}{% else %}View word{% endif %}</span>
-                                </a>
-
-                                <form class="inline-form inline-form-compact" method="post" action="{% url 'collections' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="action" value="remove_saved_word">
-                                    <input type="hidden" name="word" value="{{ saved_word.english_word }}">
-                                    <input type="hidden" name="mode" value="{{ current_mode }}">
-                                    <input type="hidden" name="back" value="{{ back_url }}">
-                                    <button class="action-button action-button-secondary" type="submit">Remove</button>
-                                </form>
-                            </article>
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <p class="empty-state">Start exploring vocabulary</p>
-                {% endif %}
-            </section>
-
-            <section class="content-section" aria-labelledby="collection-builder-title">
-                <div class="section-head">
-                    <h2 id="collection-builder-title">Create a New Collection</h2>
-                </div>
-
-                <p class="mode-intro">Create a collection, add an optional note, and attach a selected word if you have one open.</p>
-
-                <form id="collection-builder-form" class="collection-builder-form" method="post" action="{% url 'collections' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="action" value="create_collection">
-                    <input type="hidden" name="mode" value="{{ current_mode }}">
-                    <input type="hidden" name="back" value="{{ back_url }}">
-                    {% if selected_word %}
-                        <input type="hidden" name="word" value="{{ selected_word }}">
-                    {% endif %}
-                </form>
-
                 <div class="collection-builder-shell">
-                    <div class="builder-field">
-                        <label class="field-label" for="collection-name">Collection Name</label>
-                        <input
-                            id="collection-name"
-                            class="text-input"
-                            type="text"
-                            name="collection_name"
-                            placeholder="New collection name"
-                            form="collection-builder-form"
-                            required
-                        >
-                    </div>
-
                     <div class="builder-field collection-word-builder">
-                        <label class="field-label" for="collection-word-search">Add a Word</label>
+                        <label class="field-label" for="collection-word-search">Word Search</label>
                         <form
                             class="search-form search-form-stack search-form-mini collection-word-search"
                             action="{% url 'collections' %}"
@@ -109,7 +60,7 @@
 
                         {% if selected_result %}
                             <div class="translation-card collection-word-preview">
-                                <p class="translation-language">Category</p>
+                                <p class="translation-language">English Word</p>
                                 <p class="result-english">{{ selected_result.english_word|title }}</p>
                                 {% if selected_result.has_translation %}
                                     <p class="translation-language">{{ selected_result.cree_label }}</p>
@@ -118,30 +69,19 @@
                             </div>
                         {% else %}
                             <div class="builder-empty">
-                                <p class="empty-state">Search for a word to add it while creating a collection.</p>
+                                <p class="empty-state">Search for a word to start adding it to a collection.</p>
                             </div>
                         {% endif %}
                     </div>
-
-                    <div class="builder-field">
-                        <label class="field-label" for="collection-notes">Notes</label>
-                        <textarea
-                            id="collection-notes"
-                            class="text-area"
-                            name="collection_notes"
-                            rows="4"
-                            placeholder="Add collection notes or reminders..."
-                            form="collection-builder-form"
-                        ></textarea>
-                    </div>
-
-                    <button class="action-button collection-save-button" type="submit" form="collection-builder-form">Create a New Collection</button>
                 </div>
             </section>
 
             <section class="content-section" aria-labelledby="saved-collections-title">
-                <div class="section-head">
-                    <h2 id="saved-collections-title">Your Collections</h2>
+                <div class="section-head section-head-split">
+                    <div>
+                        <h2 id="saved-collections-title">Your Collections</h2>
+                    </div>
+                    <a class="action-button action-button-secondary" href="{{ create_collection_url }}">Create New Collection</a>
                 </div>
 
                 {% if collections %}

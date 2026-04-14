@@ -102,12 +102,11 @@ class HomePageTests(TestCase):
         self.assertContains(response, "Add to Collection")
         self.assertContains(response, "English Word")
         self.assertContains(response, "Related Words")
-        self.assertContains(response, "Similarity")
         self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertContains(response, reverse("select-collection"), html=False)
         self.assertContains(response, "word=rabbit", html=False)
 
-    def test_collections_page_renders_saved_words_and_collections(self):
+    def test_collections_page_renders_add_word_tools_and_collections(self):
         session = self.client.session
         session["saved_words"] = ["horse", "rabbit"]
         session["collections"] = [{"name": "Animals", "words": ["horse"], "notes": "Warm-up"}]
@@ -116,11 +115,12 @@ class HomePageTests(TestCase):
         response = self.client.get(reverse("collections"), {"mode": "Explore"})
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Saved Words")
-        self.assertContains(response, "Horse")
-        self.assertContains(response, "Rabbit")
+        self.assertContains(response, "Add a Word")
+        self.assertContains(response, "Word Search")
+        self.assertContains(response, "Create New Collection")
         self.assertContains(response, "Animals")
         self.assertContains(response, "Warm-up")
+        self.assertNotContains(response, "Saved Words")
 
     def test_collections_page_can_create_and_rename_collection(self):
         create_response = self.client.post(
@@ -199,7 +199,6 @@ class HomePageTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Horse added to Animals")
         self.assertContains(response, "English Word")
-        self.assertContains(response, "Similarity")
         self.assertNotContains(response, 'id="collection-tools-title"', html=False)
         self.assertIn("horse", self.client.session["saved_words"])
         self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
@@ -224,6 +223,26 @@ class HomePageTests(TestCase):
         self.assertEqual(self.client.session["collections"][0]["name"], "Animal Basics")
         self.assertEqual(self.client.session["collections"][0]["notes"], "Warm-up vocabulary")
         self.assertEqual(self.client.session["collections"][0]["words"], ["horse"])
+
+    def test_create_collection_page_can_create_empty_collection_from_collections(self):
+        response = self.client.post(
+            reverse("create-collection"),
+            {
+                "action": "create_collection",
+                "mode": "Explore",
+                "back": reverse("collections"),
+                "return_to": reverse("collections"),
+                "collection_name": "New Set",
+                "collection_notes": "General practice",
+            },
+            follow=True,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Collection created")
+        self.assertEqual(self.client.session["collections"][0]["name"], "New Set")
+        self.assertEqual(self.client.session["collections"][0]["notes"], "General practice")
+        self.assertEqual(self.client.session["collections"][0]["words"], [])
 
     def test_remove_saved_word_also_removes_collection_membership(self):
         session = self.client.session
