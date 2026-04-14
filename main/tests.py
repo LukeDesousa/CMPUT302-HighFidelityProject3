@@ -170,7 +170,7 @@ class HomePageTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Add a Word")
-        self.assertContains(response, "Word Search")
+        self.assertContains(response, "Search words or categories")
         self.assertContains(response, "Create New Collection")
         self.assertContains(response, "Animals")
         self.assertContains(response, "Warm-up")

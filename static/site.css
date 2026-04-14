@@ -11,6 +11,12 @@
     --radius-shell: 30px 28px 34px 26px;
     --radius-card: 20px 18px 24px 16px;
     --radius-pill: 18px 16px 20px 14px;
+    --shell-side-padding: 18px;
+    --top-bar-offset: 12px;
+    --top-bar-space: 122px;
+    --bottom-bar-offset: 16px;
+    --bottom-bar-space: 112px;
+    --search-form-max-width: 100%;
 }
 
 *,
@@ -33,7 +39,7 @@ body {
     color: var(--ink);
     overflow-x: hidden;
     overflow-y: auto;
-    padding: 24px 18px 40px;
+    padding: 24px var(--shell-side-padding) 40px;
     background:
         radial-gradient(circle at top, rgba(255, 255, 255, 0.88), transparent 34%),
         linear-gradient(180deg, #f8fbff 0%, #e8f2ff 100%);
@@ -71,7 +77,7 @@ button {
     width: min(100%, 72rem);
     min-height: calc(100vh - 64px);
     margin: 0 auto;
-    padding: 0;
+    padding: var(--top-bar-space) 0 var(--bottom-bar-space);
     display: flex;
     flex-direction: column;
     gap: 18px;
@@ -132,6 +138,12 @@ button {
     justify-content: space-between;
     gap: 12px;
     padding: 12px 16px;
+    position: fixed;
+    left: max(var(--shell-side-padding), calc(50vw - 36rem));
+    right: max(var(--shell-side-padding), calc(50vw - 36rem));
+    top: var(--top-bar-offset);
+    z-index: 40;
+    backdrop-filter: blur(14px);
 }
 
 .page-nav-main {
@@ -267,25 +279,20 @@ button {
     padding: 16px 20px;
 }
 
-.home-search-panel .search-form-stack {
-    max-width: 40rem;
-    margin: 0 auto;
-}
-
 .search-form-stack {
     display: grid;
     width: 100%;
-    max-width: 34rem;
+    max-width: var(--search-form-max-width);
     gap: 12px;
 }
 
 .search-form-mini {
-    max-width: 24rem;
+    max-width: var(--search-form-max-width);
     gap: 8px;
 }
 
 .collection-word-search {
-    max-width: none;
+    max-width: var(--search-form-max-width);
 }
 
 .search-field {
@@ -1292,8 +1299,14 @@ button {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     align-items: center;
     gap: 10px;
-    margin-top: auto;
     padding: 12px;
+    position: fixed;
+    left: max(var(--shell-side-padding), calc(50vw - 36rem));
+    right: max(var(--shell-side-padding), calc(50vw - 36rem));
+    bottom: calc(var(--bottom-bar-offset) + env(safe-area-inset-bottom));
+    z-index: 35;
+    margin-top: 0;
+    backdrop-filter: blur(14px);
 }
 
 .nav-link {
@@ -1422,7 +1435,7 @@ select:focus-visible,
 .toast {
     position: fixed;
     left: 50%;
-    bottom: 24px;
+    bottom: calc(var(--bottom-bar-space) + env(safe-area-inset-bottom));
     z-index: 50;
     min-width: min(24rem, calc(100vw - 32px));
     max-width: calc(100vw - 32px);
@@ -1562,8 +1575,16 @@ select:focus-visible,
 }
 
 @media (min-width: 768px) {
+    :root {
+        --shell-side-padding: 24px;
+        --top-bar-offset: 16px;
+        --top-bar-space: 104px;
+        --bottom-bar-offset: 20px;
+        --bottom-bar-space: 124px;
+    }
+
     body {
-        padding: 28px 24px 48px;
+        padding: 28px var(--shell-side-padding) 48px;
     }
 
     .page-nav,

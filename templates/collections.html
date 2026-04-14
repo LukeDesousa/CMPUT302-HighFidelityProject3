@@ -7,73 +7,62 @@
         {% include "includes/top_nav.html" with title="Collections" show_back=True %}
 
         <main class="screen-content collections-screen">
-            <section class="content-section" aria-labelledby="collection-word-title">
-                <div class="section-head section-head-split">
-                    <div>
-                        <h1 id="collection-word-title" class="result-title">Add a Word</h1>
-                        <p class="mode-intro">
-                            {% if selected_result %}
-                                Choose a collection for {{ selected_result.english_word|title }} below.
-                            {% else %}
-                                Search for a word first, then add it to one of your collections.
-                            {% endif %}
-                        </p>
-                    </div>
-                    {% if selected_result %}
-                        <span class="status-pill">Selected: {{ selected_result.english_word|title }}</span>
-                    {% endif %}
+            <section class="search-panel" aria-labelledby="collection-word-title">
+                <div class="result-topline">
+                    <h1 id="collection-word-title" class="result-title">Add a Word</h1>
                 </div>
 
-                <div class="collection-builder-shell">
-                    <div class="builder-field collection-word-builder">
-                        <label class="field-label" for="collection-word-search">Word Search</label>
-                        <form
-                            class="search-form search-form-stack search-form-mini collection-word-search"
-                            action="{% url 'collections' %}"
-                            method="get"
-                            role="search"
-                            data-search-form
-                        >
-                            <input type="hidden" name="mode" value="{{ current_mode }}">
-                            <input type="hidden" name="back" value="{{ back_url }}">
-                            <label class="sr-only" for="collection-word-search">Search for words</label>
-                            <div class="search-field search-field-mini">
-                                <span class="search-icon" aria-hidden="true">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                        <circle cx="11" cy="11" r="6.5"></circle>
-                                        <path d="M16 16l5 5"></path>
-                                    </svg>
-                                </span>
-                                <input
-                                    id="collection-word-search"
-                                    name="word"
-                                    type="search"
-                                    value="{{ selected_word|default:'' }}"
-                                    placeholder="{{ search_placeholder }}"
-                                    data-search-query
-                                    autocomplete="off"
-                                >
-                            </div>
-                            <div class="search-suggestions" data-search-suggestions hidden></div>
-                            <script type="application/json" data-search-suggestions-source>{{ collection_word_suggestions_json|safe }}</script>
-                        </form>
+                <p class="mode-intro">
+                    {% if selected_result %}
+                        Choose a collection for {{ selected_result.english_word|title }} below.
+                    {% else %}
+                        Search for a word first, then add it to one of your collections.
+                    {% endif %}
+                </p>
 
-                        {% if selected_result %}
-                            <div class="translation-card collection-word-preview">
-                                <p class="translation-language">English Word</p>
-                                <p class="result-english">{{ selected_result.english_word|title }}</p>
-                                {% if selected_result.has_translation %}
-                                    <p class="translation-language">{{ selected_result.cree_label }}</p>
-                                    <p class="translation-word">{{ selected_result.cree_translation }}</p>
-                                {% endif %}
-                            </div>
-                        {% else %}
-                            <div class="builder-empty">
-                                <p class="empty-state">Search for a word to start adding it to a collection.</p>
-                            </div>
+                <form
+                    class="search-form search-form-stack collection-word-search"
+                    action="{% url 'collections' %}"
+                    method="get"
+                    role="search"
+                    data-search-form
+                >
+                    <input type="hidden" name="mode" value="{{ current_mode }}">
+                    <input type="hidden" name="back" value="{{ back_url }}">
+                    <label class="sr-only" for="collection-word-search">Search words or categories</label>
+                    <div class="search-field">
+                        <span class="search-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="6.5"></circle>
+                                <path d="M16 16l5 5"></path>
+                            </svg>
+                        </span>
+                        <input
+                            id="collection-word-search"
+                            name="word"
+                            type="search"
+                            value="{{ selected_word|default:'' }}"
+                            placeholder="{{ search_placeholder }}"
+                            data-search-query
+                            autocomplete="off"
+                        >
+                    </div>
+                    <div class="search-suggestions" data-search-suggestions hidden></div>
+                    <script type="application/json" data-search-suggestions-source>{{ collection_word_suggestions_json|safe }}</script>
+                </form>
+
+                {% if selected_result %}
+                    <div class="translation-card collection-word-preview">
+                        <p class="translation-language">English Word</p>
+                        <p class="result-english">{{ selected_result.english_word|title }}</p>
+                        {% if selected_result.has_translation %}
+                            <p class="translation-language">{{ selected_result.cree_label }}</p>
+                            <p class="translation-word">{{ selected_result.cree_translation }}</p>
                         {% endif %}
                     </div>
-                </div>
+                {% else %}
+                    <p class="empty-state">Search for a word to start adding it to a collection.</p>
+                {% endif %}
             </section>
 
             <section class="content-section" aria-labelledby="saved-collections-title">
